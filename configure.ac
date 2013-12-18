@@ -12,14 +12,14 @@ dnl - If there are no ABI changes, increase revision.
 dnl - If ABI is changed backwards-compatible way, increase current and age. Set revision to 0.
 dnl - If ABI is broken, increase current and set age and revision to 0.
 #
-dnl Library file name will be libaacs.(current-age).age.revision
+dnl Library file name will be libbdplus.(current-age).age.revision
 #
 m4_define([lt_current],  0)
 m4_define([lt_age],      0)
 m4_define([lt_revision], 0)
 
 dnl initilization
-AC_INIT([libbdplus], bdplus_version, [http://http.videolan.org/developers/libbdplus.html])
+AC_INIT([libbdplus], bdplus_version, [http://www.videolan.org/developers/libbdplus.html])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_SYSTEM
