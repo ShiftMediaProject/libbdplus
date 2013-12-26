@@ -157,7 +157,8 @@ AC_ARG_WITH([libaacs],
 AS_IF([test "x$with_libaacs" != "xno"], [
   PKG_CHECK_MODULES([LIBAACS], [libaacs >= 0.7.0],
     [with_libaacs=yes; AC_DEFINE([HAVE_LIBAACS], [1],
-        [Define to 1 to use libaacs with bdplus_test])])
+        [Define to 1 to use libaacs with bdplus_test])],
+    [with_libaacs=no])
 ])
 
 CC_CHECK_CFLAGS_APPEND([-Wall -Wdisabled-optimization -Wpointer-arith ]dnl
