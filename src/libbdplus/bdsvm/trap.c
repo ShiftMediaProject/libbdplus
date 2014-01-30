@@ -436,7 +436,16 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     /* Build an s-expression for the hash */
     gcry_sexp_build(&sexp_data, NULL,
                     "(data"
+#if defined(GCRYPT_VERSION_NUMBER) && GCRYPT_VERSION_NUMBER >= 0x010600
+                    /*
+                     * For some reason gcrypt 1.6.0
+                     * requires 'param' flag here and not
+                     * in key, probably a bug.
+                     */
+                    "  (flags raw param)"
+#else
                     "  (flags raw)"
+#endif
                     "  (value %m))",
                     mpi_hash
                     );
@@ -472,35 +481,35 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
       strfmt_key = (char*)malloc(
         sizeof("(private-key") +
         sizeof("(ecdsa") +
-        sizeof("(p #") + sizeof(CA_q) + sizeof("#)") +
-        sizeof("(a #") + sizeof(CA_a) + sizeof("#)") +
-        sizeof("(b #") + sizeof(CA_b) + sizeof("#)") +
+        sizeof("(p #00") + sizeof(CA_q) + sizeof("#)") +
+        sizeof("(a #00") + sizeof(CA_a) + sizeof("#)") +
+        sizeof("(b #00") + sizeof(CA_b) + sizeof("#)") +
         sizeof("(g #04") +
             sizeof(CA_x_G) +
             sizeof(CA_y_G) +
             sizeof("#)") +
-        sizeof("(n #") + sizeof(CA_n) + sizeof("#)") +
+        sizeof("(n #00") + sizeof(CA_n) + sizeof("#)") +
         sizeof("(q #04") +
             strlen(CA_x_Q0) +
             strlen(CA_y_Q0) +
             sizeof("#)") +
-        sizeof("(d #") + strlen(CA_d0) + sizeof("#)))") + 1);
+        sizeof("(d #00") + strlen(CA_d0) + sizeof("#)))") + 1);
       sprintf(strfmt_key,
         "(private-key"
         "(ecdsa"
-        "(p #%s#)"
-        "(a #%s#)"
-        "(b #%s#)"
+        "(p #00%s#)"
+        "(a #00%s#)"
+        "(b #00%s#)"
         "(g #04"
             "%s"
             "%s"
             "#)"
-        "(n #%s#)"
+        "(n #00%s#)"
         "(q #04"
             "%s"
             "%s"
             "#)"
-        "(d #%s#)))",
+        "(d #00%s#)))",
         CA_q,
         CA_a,
         CA_b,
@@ -517,35 +526,35 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
       strfmt_key = (char*)malloc(
         sizeof("(private-key") +
         sizeof("(ecdsa") +
-        sizeof("(p #") + sizeof(CA_q) + sizeof("#)") +
-        sizeof("(a #") + sizeof(CA_a) + sizeof("#)") +
-        sizeof("(b #") + sizeof(CA_b) + sizeof("#)") +
+        sizeof("(p #00") + sizeof(CA_q) + sizeof("#)") +
+        sizeof("(a #00") + sizeof(CA_a) + sizeof("#)") +
+        sizeof("(b #00") + sizeof(CA_b) + sizeof("#)") +
         sizeof("(g #04") +
             sizeof(CA_x_G) +
             sizeof(CA_y_G) +
             sizeof("#)") +
-        sizeof("(n #") + sizeof(CA_n) + sizeof("#)") +
+        sizeof("(n #00") + sizeof(CA_n) + sizeof("#)") +
         sizeof("(q #04") +
             strlen(CA_x_Q1) +
             strlen(CA_y_Q1) +
             sizeof("#)") +
-        sizeof("(d #") + strlen(CA_d1) + sizeof("#)))") + 1);
+        sizeof("(d #00") + strlen(CA_d1) + sizeof("#)))") + 1);
       sprintf(strfmt_key,
         "(private-key"
         "(ecdsa"
-        "(p #%s#)"
-        "(a #%s#)"
-        "(b #%s#)"
+        "(p #00%s#)"
+        "(a #00%s#)"
+        "(b #00%s#)"
         "(g #04"
             "%s"
             "%s"
             "#)"
-        "(n #%s#)"
+        "(n #00%s#)"
         "(q #04"
             "%s"
             "%s"
             "#)"
-        "(d #%s#)))",
+        "(d #00%s#)))",
         CA_q,
         CA_a,
         CA_b,
