@@ -187,7 +187,7 @@ static void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 /* SHA1Init - Initialize new context */
 void sha_SHA1_Init(SHA1_CTX* context)
 {
-    memset(context, 0, sizeof(context));
+    memset(context, 0, sizeof(*context));
 
     /* SHA1 initialization constants */
     context->state[0] = 0x67452301;
