@@ -23,7 +23,7 @@ AC_INIT([libbdplus], bdplus_version, [http://www.videolan.org/developers/libbdpl
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip])
+AM_INIT_AUTOMAKE([foreign tar-ustar dist-bzip2 no-dist-gzip subdir-objects])
 AC_CONFIG_HEADERS(config.h)
 
 SET_FEATURES="-D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112L"
