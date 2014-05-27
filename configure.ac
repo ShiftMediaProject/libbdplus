@@ -1,7 +1,7 @@
 dnl library version number
 m4_define([bdplus_major], 0)
 m4_define([bdplus_minor], 1)
-m4_define([bdplus_micro], 0)
+m4_define([bdplus_micro], 1)
 m4_define([bdplus_version],[bdplus_major.bdplus_minor.bdplus_micro])
 
 dnl library (.so) version
@@ -16,7 +16,7 @@ dnl Library file name will be libbdplus.(current-age).age.revision
 #
 m4_define([lt_current],  0)
 m4_define([lt_age],      0)
-m4_define([lt_revision], 0)
+m4_define([lt_revision], 1)
 
 dnl initilization
 AC_INIT([libbdplus], bdplus_version, [http://www.videolan.org/developers/libbdplus.html])

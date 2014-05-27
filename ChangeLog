@@ -1,3 +1,8 @@
+2014-05-27: Version 0.1.1
+ - Support for gcrypt 1.6.
+ - Fix out of tree builds.
+ - Fix building without libaacs.
+
 2013-12-18: Version 0.1.0
  - First release.
  - Support for BD+ generations 1 and 2.
