@@ -1,0 +1,16 @@
+
+EXPORTS
+    bdplus_event
+    bdplus_fixup
+    bdplus_free
+    bdplus_get_code_date
+    bdplus_get_code_gen
+    bdplus_get_version
+    bdplus_init
+    bdplus_m2ts
+    bdplus_m2ts_close
+    bdplus_mmap
+    bdplus_psr
+    bdplus_seek
+    bdplus_set_mk
+    bdplus_start
