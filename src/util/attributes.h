@@ -46,7 +46,7 @@
 #    define BD_PRIVATE
 #endif
 
-#if !defined(__GNUC__) || __GNUC__ < 3
+#if ( !defined(__GNUC__) || __GNUC__ < 3 ) && !defined(__INTEL_COMPILER)
 #  define BD_LIKELY(x)   (x)
 #  define BD_UNLIKELY(x) (x)
 #else
