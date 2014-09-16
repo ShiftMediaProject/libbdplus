@@ -1,4 +1,3 @@
-
 /* Define to the full name and version of this package. */
 #define PACKAGE_STRING "libbdplus 0.1.1"
 
