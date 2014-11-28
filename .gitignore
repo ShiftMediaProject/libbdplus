@@ -26,13 +26,3 @@ src/libbdplus/bdplus-version.h
 src/bdplus_test
 src/convtab_dump
 stamp-h1
-
-*.obj
-*.log
-*.tlog
-*.pdb
-*.ildb
-*.suo
-*.sdf
-[Oo]bj/
-*.exe
