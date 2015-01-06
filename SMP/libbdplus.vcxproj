@@ -103,7 +103,6 @@
     <ClInclude Include="..\src\util\strutl.h" />
     <ClInclude Include="config.h" />
     <ClInclude Include="src\libbdplus\bdplus-version.h" />
-    <ClInclude Include="version.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="libbdplus.def" />
