@@ -21,7 +21,7 @@
 # include "config.h"
 #endif
 
-#include "file.h"
+#include "configfile.h"
 
 #include "dirs.h"
 #include "util/logging.h"

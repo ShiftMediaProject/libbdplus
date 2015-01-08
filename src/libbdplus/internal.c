@@ -26,7 +26,7 @@
 #include "bdsvm/loader.h"
 #include "bdsvm/segment.h"
 
-#include "file/file.h"
+#include "file/configfile.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"

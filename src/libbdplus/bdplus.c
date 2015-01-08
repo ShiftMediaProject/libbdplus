@@ -34,7 +34,7 @@
 #include "util/macro.h"
 #include "util/mutex.h"
 #include "util/strutl.h"
-#include "file/file.h"
+#include "file/configfile.h"
 
 #include <string.h>
 #include <stdlib.h>

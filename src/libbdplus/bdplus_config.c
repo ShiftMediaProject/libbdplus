@@ -23,7 +23,7 @@
 
 #include "bdplus_config.h"
 
-#include "file/file.h"
+#include "file/configfile.h"
 #include "util/logging.h"
 #include "util/strutl.h"
 #include "util/macro.h"

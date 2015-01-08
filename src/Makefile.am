@@ -35,8 +35,8 @@ libbdplus_la_SOURCES=\
 	libbdplus/bdsvm/sha1.h \
 	libbdplus/bdsvm/sha1.c \
 	file/dirs.h \
-	file/file.c \
-	file/file.h \
+	file/configfile.c \
+	file/configfile.h \
 	util/attributes.h \
 	util/macro.h \
 	util/mutex.h \
