@@ -21,10 +21,9 @@
 #include "internal.h"
 #include "bdplus_data.h"
 
-#include "loader.h"
-
 #include "bdsvm/dlx.h"
 #include "bdsvm/event.h"
+#include "bdsvm/loader.h"
 #include "bdsvm/segment.h"
 
 #include "file/file.h"

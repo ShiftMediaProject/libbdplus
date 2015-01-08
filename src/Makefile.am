@@ -10,13 +10,13 @@ libbdplus_la_SOURCES=\
 	libbdplus/bdplus.c \
 	libbdplus/bdplus_data.h \
 	libbdplus/internal.h \
-	libbdplus/loader.c \
-	libbdplus/loader.h \
 	libbdplus/bdplus_config.c \
 	libbdplus/bdplus_config.h \
 	libbdplus/bdsvm/diff.h \
 	libbdplus/bdsvm/event.c \
 	libbdplus/bdsvm/event.h \
+	libbdplus/bdsvm/loader.c \
+	libbdplus/bdsvm/loader.h \
 	libbdplus/bdsvm/segment.c \
 	libbdplus/bdsvm/trap_helper.c \
 	libbdplus/bdsvm/trap.c \

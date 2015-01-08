@@ -20,7 +20,7 @@
 
 #include "loader.h"
 
-#include "bdsvm/dlx.h"
+#include "dlx.h"
 
 #include "util/logging.h"
 #include "util/macro.h"
