@@ -56,6 +56,7 @@ struct bdplus_s {
 
     struct bd_mutex_s  *mutex;
 
+    uint8_t   loaded;
     uint8_t   started;
 
     /* BD+ content code version */

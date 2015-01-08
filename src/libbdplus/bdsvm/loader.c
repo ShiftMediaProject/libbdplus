@@ -22,11 +22,11 @@
 
 #include "dlx.h"
 
+#include "file/file.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
 
-#include <errno.h>
 #include <string.h>
 
 
@@ -85,33 +85,19 @@ static int _code_version_check(uint8_t *hdr, int *p_gen, int *p_date)
     return 0;
 }
 
-int32_t loader_load_svm(VM *vm, const char *device_path, const char *fname,
-                        int *p_gen, int *p_date)
+int32_t loader_load_svm(BDPLUS_FILE_H *fp, const char *fname, VM *vm, int *p_gen, int *p_date)
 {
-    FILE *fd;
     uint32_t len;
-    char *name;
     uint8_t *addr = dlx_getAddr(vm);
 
-    // Join the path.
-    name = str_printf("%s/%s", device_path, fname);
-
-    // FIXME: Change to Unified FILE functions
-    fd = fopen(name, "rb");
-    X_FREE(name);
-    if (!fd) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error opening %s/%s\n", device_path, fname);
-        return errno;
-    }
-
     // Read BD SVM header
-    if (fread(addr, 0x18, 1, fd) != 1) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading header from %s/%s\n", device_path, fname);
-        return errno;
+    if (file_read(fp, addr, 0x18) != 0x18) {
+        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading header from %s\n", fname);
+        return -1;
     }
 
     if (memcmp(addr, "BDSVM_CC", 8)) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] %s/%s failed signature match\n", device_path, fname);
+        DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] %s failed signature match\n", fname);
     }
 
     _code_version_check(addr, p_gen, p_date);
@@ -122,17 +108,17 @@ int32_t loader_load_svm(VM *vm, const char *device_path, const char *fname,
     DEBUG(DBG_BDPLUS,"[bdplus] svm size %08X (%u)\n", len, len);
 
     if (len >= dlx_getAddrSize(vm)) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] Section too long (%d) in %s/%s\n", len, device_path, fname);
+        DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] Section too long (%d) in %s\n", len, fname);
         return -1;
     }
 
     // read length data
-    if (fread(addr, len, 1, fd) != 1) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading section from %s/%s\n", device_path, fname);
-        return errno;
+    if (file_read(fp, addr, len) != len) {
+        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading section from %s\n", fname);
+        return -1;
     }
 
-    fclose(fd);
+    file_close(fp);
 
     DEBUG(DBG_BDPLUS,"[bdplus] loaded core '%s'\n", fname);
 

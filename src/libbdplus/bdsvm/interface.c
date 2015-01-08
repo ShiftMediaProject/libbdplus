@@ -757,7 +757,7 @@ void interface_trap(VM *vm, uint32_t trap)
         else {
             result =
                 TRAP_LoadContentCode(
-                                     bdplus_getDevicePath(plus),
+                                     bdplus_getConfig(plus),
                                      &vm->addr[ src & ADDR_MASK1 ],// ContentCode
                                      FETCH4( SP+4  ),  // block
                                      FETCH4( SP+8  ),  // offset
@@ -811,7 +811,7 @@ void interface_trap(VM *vm, uint32_t trap)
         else {
             result =
                 TRAP_MediaCheck(
-                                bdplus_getDevicePath(plus),
+                                bdplus_getConfig(plus),
                                 &vm->addr[ src & ADDR_MASK1 ],// fname
                                 fname_len,
                                 FETCH4( SP+8  ),               // OffsHigh

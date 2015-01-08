@@ -35,6 +35,7 @@
 #include "util/mutex.h"
 #include "util/strutl.h"
 #include "file/configfile.h"
+#include "file/file_default.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -54,15 +55,36 @@ void bdplus_get_version(int *major, int *minor, int *micro)
   *micro = BDPLUS_VERSION_MICRO;
 }
 
+static int _load_svm(bdplus_t *plus)
+{
+    if (!plus->config->fopen) {
+        DEBUG(DBG_BDPLUS | DBG_CRIT, "No device path or filesystem access function provided\n");
+        return -1;
+    }
+
+    DEBUG(DBG_BDPLUS, "[bdplus] loading BDSVM/00000.svm...\n");
+    if (bdplus_load_svm(plus, "BDSVM/00000.svm")) {
+        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error loading BDSVM/00000.svm\n");
+        return -1;
+    }
+
+    plus->loaded = 1;
+    return 0;
+}
+
 int32_t bdplus_get_code_gen(bdplus_t *plus)
 {
     if (!plus) return -1;
+    if (!plus->loaded && _load_svm(plus) < 0) return -1;
+
     return plus->gen;
 }
 
 int32_t bdplus_get_code_date(bdplus_t *plus)
 {
     if (!plus) return -1;
+    if (!plus->loaded && _load_svm(plus) < 0) return -1;
+
     return plus->date;
 }
 
@@ -95,16 +117,11 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     // Change to TEAM BLUH-RAY, DOOM9 FORUMS.
     DEBUG(DBG_BDPLUS, "[bdplus] initialising...\n");
 
-    if (!path) {
-        DEBUG(DBG_BDPLUS, "No path\n");
-        return NULL;
-    }
-
     /* Ensure libgcrypt is initialized before doing anything else */
     DEBUG(DBG_BDPLUS, "Initializing libgcrypt...\n");
     if (!crypto_init())
     {
-        DEBUG(DBG_BDPLUS, "Failed to initialize libgcrypt\n");
+        DEBUG(DBG_BDPLUS | DBG_CRIT, "Failed to initialize libgcrypt\n");
         return NULL;
     }
 
@@ -118,7 +135,10 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
 
     memset(plus, 0, sizeof(*plus)); // I just don't like calloc, strange..
 
-    bdplus_config_load(config_path, &plus->config);
+    if (bdplus_config_load(config_path, &plus->config) < 0) {
+        X_FREE(plus);
+        return NULL;
+    }
 
     plus->free_slot = BDPLUS_NUM_SLOTS-1;
 
@@ -126,18 +146,25 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     plus->attachedStatus[0] = 0;
     plus->attachedStatus[1] = 7;
 
-    plus->device_path = (char*)malloc(strlen(path) + 1);
-    strcpy(plus->device_path, path);
+    if (path) {
+        plus->device_path = (char*)malloc(strlen(path) + 1);
+        strcpy(plus->device_path, path);
+
+        plus->config->fopen_handle = plus->device_path;
+        plus->config->fopen        = file_open_default;
+    }
 
     plus->mutex     = calloc(1, sizeof(BD_MUTEX));
     bd_mutex_init(plus->mutex);
 
-    DEBUG(DBG_BDPLUS, "[bdplus] loading BDSVM/00000.svm and flash.bin...\n");
-    if (bdplus_load_svm(plus, "BDSVM/00000.svm")) {
-        DEBUG(DBG_BDPLUS, "[bdplus] Error loading BDSVM/00000.svm\n");
-        bdplus_free(plus);
-        return NULL;
+    if (plus->config->fopen) {
+        if (_load_svm(plus) < 0) {
+            bdplus_free(plus);
+            return NULL;
+        }
     }
+
+    DEBUG(DBG_BDPLUS, "[bdplus] loading flash.bin...\n");
     _load_slots(plus);
 
     memcpy(plus->volumeID, vid, sizeof(plus->volumeID));
@@ -145,6 +172,14 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     DEBUG(DBG_BDPLUS, "[bdplus] created and returning bdplus_t %p\n", plus);
 
     return plus;
+}
+
+void bdplus_set_fopen(bdplus_t *plus, void *handle, BDPLUS_FILE_OPEN p)
+{
+    if (plus) {
+        plus->config->fopen_handle = handle;
+        plus->config->fopen        = p;
+    }
 }
 
 void bdplus_set_mk(bdplus_t *plus, const uint8_t *mk)
@@ -159,6 +194,10 @@ int32_t bdplus_start(bdplus_t *plus)
     int32_t result = 0;
 
     if (!plus) return -1;
+
+    if (!plus->loaded && !_load_svm(plus)) {
+        return -1;
+    }
 
     bd_mutex_lock(plus->mutex);
 
@@ -304,6 +343,10 @@ void bdplus_psr             ( bdplus_t *plus,
 static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, uint32_t param2)
 {
     if (!plus) return -1;
+
+    if (!plus->loaded && _load_svm(plus) < 0) {
+        return -1;
+    }
 
     if (event == BDPLUS_EVENT_START) {
         return bdplus_start(plus);

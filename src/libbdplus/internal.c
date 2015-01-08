@@ -20,6 +20,7 @@
 
 #include "internal.h"
 #include "bdplus_data.h"
+#include "bdplus_config.h"
 
 #include "bdsvm/dlx.h"
 #include "bdsvm/event.h"
@@ -27,6 +28,7 @@
 #include "bdsvm/segment.h"
 
 #include "file/configfile.h"
+#include "file/file.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
@@ -77,11 +79,18 @@ char *bdplus_disc_cache_file(bdplus_t *plus, const char *file)
 
 int32_t bdplus_load_svm(bdplus_t *plus, const char *fname)
 {
+    BDPLUS_FILE_H *fp;
+
     dlx_freeVM(&plus->vm);
     plus->vm = dlx_initVM(plus);
 
-    return loader_load_svm(plus->vm, plus->device_path, fname,
-                           &plus->gen, &plus->date);
+    fp = file_open(plus->config, fname);
+    if (!fp) {
+        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error opening %s\n", fname);
+        return -1;
+    }
+
+    return loader_load_svm(fp, fname, plus->vm, &plus->gen, &plus->date);
 }
 
 
@@ -253,11 +262,6 @@ void bdplus_setConvTable(bdplus_t *plus, conv_table_t *conv_tab)
 conv_table_t *bdplus_getConvTable(bdplus_t *plus)
 {
     return plus->conv_tab;
-}
-
-const char *bdplus_getDevicePath(bdplus_t *plus)
-{
-    return plus->device_path;
 }
 
 

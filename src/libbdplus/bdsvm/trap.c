@@ -22,11 +22,6 @@
 #include "config.h"
 #endif
 
-#if defined(__MINGW32__)
-/* ftello64() and fseeko64() prototypes from stdio.h */
-#   undef __STRICT_ANSI__
-#endif
-
 #include "trap.h"
 #include "trap_helper.h"
 #include "diff.h"
@@ -34,10 +29,10 @@
 
 #include "libbdplus/bdplus_config.h"
 
+#include "file/file.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
-
 
 #include <gcrypt.h>
 
@@ -48,10 +43,6 @@
 #endif
 #if HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif
-
-#if defined(__MINGW32__)
-#  define fseeko fseeko64
 #endif
 
 /* Set this in CFLAGS to debug gcrypt MPIs and S-expressions */
@@ -1159,52 +1150,50 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
 //
 // Filename "00001" -> "BDSVM/00001.svm".
 //
-uint32_t TRAP_LoadContentCode(const char *device_path, uint8_t *FileName, uint32_t Section, uint32_t Unknown, uint32_t *len, uint8_t *dst)
+uint32_t TRAP_LoadContentCode(bdplus_config_t *config, uint8_t *FileName, uint32_t Section, uint32_t Unknown, uint32_t *len, uint8_t *dst)
 {
-    FILE *fd;
+    BDPLUS_FILE_H *fd;
     int64_t rbytes;
-    uint8_t *fname;
+    char *fname;
 
     DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_LoadContentCode('%s':%08X -> %p)\n", FileName, *len, dst);
 
 
     // Build the real filename.
-    fname = (uint8_t *)
-        str_printf("%s/BDSVM/%s.svm",
-                   device_path,
-                   (char *) FileName);
+    fname = str_printf("BDSVM/%s.svm", (char *) FileName);
 
     DEBUG(DBG_BDPLUS,"[TRAP] reading '%s': unknown %08X\n", fname, Unknown);
 
-    fd = fopen((char *)fname, "rb");
+    fd = file_open(config, fname);
     X_FREE(fname);
+
     if (!fd) {
         DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: cant open %s\n", (char*)FileName);
         return STATUS_INVALID_PARAMETER; // FIXME
     }
 
     // Skip the SVM header.
-    if (fseek(fd, SVM_HEADER_SIZE, SEEK_SET) < 0) {
+    if (file_seek(fd, SVM_HEADER_SIZE, SEEK_SET) < 0) {
         DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s (header) failed\n", (char*)FileName);
-        fclose(fd);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
-    if (fseek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
+    if (file_seek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
         DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)FileName, Section);
-        fclose(fd);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
 
     // They assume the memory wraps, and sometimes deliberately load near the
     // end of the memory.
     DEBUG(DBG_BDPLUS,"[TRAP] reading %d/%08X bytes into %p\n", *len, *len, dst);
-    rbytes = fread(dst, 1, *len, fd);
+    rbytes = file_read(fd, dst, *len);
     if (rbytes < 0 || rbytes != (int64_t)*len) {
         DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: read %"PRId64" bytes of %d from %s\n", rbytes, *len, (char*)FileName);
-        fclose(fd);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
-    fclose(fd);
+    file_close(fd);
 
     DEBUG(DBG_BDPLUS,"[TRAP] read %"PRId64" bytes. %p-%p\n", rbytes, dst, &dst[rbytes]);
     *len = rbytes;
@@ -1270,24 +1259,14 @@ uint32_t TRAP_DiscoveryRAM(bdplus_config_t *config, uint32_t src, uint8_t *buffe
     return STATUS_OK;
 }
 
-uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t FileNameLen, uint32_t FileOffsetHigh, uint32_t FileOffsetLow, uint32_t *len, uint8_t *dst)
+uint32_t TRAP_MediaCheck(bdplus_config_t *config, uint8_t *FileName, uint32_t FileNameLen, uint32_t FileOffsetHigh, uint32_t FileOffsetLow, uint32_t *len, uint8_t *dst)
 {
     uint8_t buffer[SHA_BLOCK_SIZE]; // fix me
-    FILE *fd;
+    BDPLUS_FILE_H *fd;
     uint32_t j;
     uint64_t seek;
-    uint8_t *full_name;
 
     DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MediaCheck(%d/%d)\n", *len, FileNameLen);
-
-
-
-    // Build the real filename.
-    full_name = (uint8_t *)
-        str_printf("%s/%s",
-                   device_path,
-                   FileName
-                   );
 
 #if 0
     // Skip past "BDMV/" if string starts with it..
@@ -1301,13 +1280,15 @@ uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t Fi
 
     seek = ((uint64_t)FileOffsetHigh << 32) | (uint64_t)FileOffsetLow;
 
-    DEBUG(DBG_BDPLUS,"[TRAP] reading '%s' at pos %016"PRIx64" from %s\n",
-          FileName, seek,
-          full_name);
+    DEBUG(DBG_BDPLUS,"[TRAP] reading '%s' at pos %016"PRIx64"\n", FileName, seek);
 
-    fd = fopen((char *)full_name, "rb");
-    X_FREE(full_name);
-
+    fd = file_open(config, (char *)FileName);
+    if (!fd) {
+        DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
+        file_close(fd);
+        return STATUS_INVALID_PARAMETER;
+    }
+#if 0
     if (!fd) {
         DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
         // Attempt to load it via hashdb
@@ -1318,16 +1299,17 @@ uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t Fi
         X_FREE(full_name);
         return j;
     }
+#endif
 
-    if (fseeko(fd, seek, SEEK_SET)) {
+    if (file_seek(fd, seek, SEEK_SET)) {
         DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to seek %s to %"PRIu64"\n", (char *)FileName, seek);
-        fclose(fd);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
 
     for (j = 0; j < ((*len) / SHA_BLOCK_SIZE); j++) {  // "/ 0x200"
 
-        if (fread(buffer, SHA_BLOCK_SIZE, 1, fd) != 1) {
+        if (file_read(fd, buffer, SHA_BLOCK_SIZE) != SHA_BLOCK_SIZE) {
             DEBUG(DBG_BDPLUS,"[TRAP] MediaCheck warning short read: %d\n", j);
             break;
         }
@@ -1337,7 +1319,7 @@ uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t Fi
                             buffer, SHA_BLOCK_SIZE);
     }
 
-    fclose(fd);
+    file_close(fd);
 
     *len = j * SHA_BLOCK_SIZE;
     DEBUG(DBG_BDPLUS,"[TRAP] MediaCheck returning size %08X\n", j * SHA_BLOCK_SIZE);

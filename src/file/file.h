@@ -1,7 +1,6 @@
 /*
  * This file is part of libbdplus
- * Copyright (C) 2008-2010  Accident
- * Copyright (C) 2013       VideoLAN
+ * Copyright (C) 2015  VideoLAN
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +17,25 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LOADER_H_INCLUDED
-#define LOADER_H_INCLUDED
+#ifndef FILE_H_
+#define FILE_H_
 
-#include "util/attributes.h"
+#include "filesystem.h"
 
-#include <stdint.h>
-
-struct VM_s;
-struct bdplus_file;
-
-BD_PRIVATE int32_t loader_load_svm (struct bdplus_file *fp, const char *fname, struct VM_s *vm, int *p_gen, int *p_date);
-
+#ifdef _WIN32
+# define DIR_SEP "\\"
+#else
+# define DIR_SEP "/"
 #endif
+
+/*
+ * file access
+ */
+
+#define file_close(X)    X->close(X)
+#define file_seek(X,Y,Z) X->seek(X,Y,Z)
+#define file_read(X,Y,Z) X->read(X,Y,Z)
+
+#define file_open(cfg, fname) (cfg->fopen(cfg->fopen_handle, fname))
+
+#endif /* FILE_H_ */
