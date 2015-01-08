@@ -17,8 +17,8 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BDPLUS_FILE_H
-#define BDPLUS_FILE_H
+#ifndef BDPLUS_CONFIGFILE_H
+#define BDPLUS_CONFIGFILE_H
 
 #include <util/attributes.h>
 
