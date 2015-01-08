@@ -1179,18 +1179,18 @@ uint32_t TRAP_LoadContentCode(const char *device_path, uint8_t *FileName, uint32
     fd = fopen((char *)fname, "rb");
     X_FREE(fname);
     if (!fd) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: cant open %s\n", (char*)fname);
+        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: cant open %s\n", (char*)FileName);
         return STATUS_INVALID_PARAMETER; // FIXME
     }
 
     // Skip the SVM header.
     if (fseek(fd, SVM_HEADER_SIZE, SEEK_SET) < 0) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s (header) failed\n", (char*)fname);
+        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s (header) failed\n", (char*)FileName);
         fclose(fd);
         return STATUS_INVALID_PARAMETER;
     }
     if (fseek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)fname, Section);
+        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)FileName, Section);
         fclose(fd);
         return STATUS_INVALID_PARAMETER;
     }
@@ -1200,7 +1200,7 @@ uint32_t TRAP_LoadContentCode(const char *device_path, uint8_t *FileName, uint32
     DEBUG(DBG_BDPLUS,"[TRAP] reading %d/%08X bytes into %p\n", *len, *len, dst);
     rbytes = fread(dst, 1, *len, fd);
     if (rbytes < 0 || rbytes != (int64_t)*len) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: read %"PRId64" bytes of %d from %s\n", rbytes, *len, (char*)fname);
+        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: read %"PRId64" bytes of %d from %s\n", rbytes, *len, (char*)FileName);
         fclose(fd);
         return STATUS_INVALID_PARAMETER;
     }
