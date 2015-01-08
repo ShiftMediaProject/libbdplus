@@ -26,6 +26,9 @@ AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([foreign tar-ustar dist-bzip2 no-dist-gzip subdir-objects])
 AC_CONFIG_HEADERS(config.h)
 
+dnl Enable silent rules only when available (automake 1.11 or later).
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
+
 SET_FEATURES="-D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112L"
 
 case "${host_os}" in
