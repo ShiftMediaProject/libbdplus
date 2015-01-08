@@ -28,6 +28,6 @@
 struct VM_s;
 
 BD_PRIVATE int32_t  loader_load_svm ( struct VM_s *vm, const char *device_path, const char *fname,
-                                      int *pg_en, int *p_date);
+                                      int *p_gen, int *p_date);
 
 #endif
