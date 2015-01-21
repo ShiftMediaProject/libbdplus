@@ -1,3 +1,7 @@
+2015-01-23: Version 0.1.2
+- Add support for unmounted discs
+- Fix use after free
+
 2014-05-27: Version 0.1.1
  - Support for gcrypt 1.6.
  - Fix out of tree builds.
