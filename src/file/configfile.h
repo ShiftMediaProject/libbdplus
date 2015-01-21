@@ -27,10 +27,10 @@
 
 BD_PRIVATE int          file_mkpath(const char *path);
 
-BD_PRIVATE const char * file_get_cache_dir(void);
-BD_PRIVATE char *       file_get_config_dir(const char *file);
+BD_PRIVATE char *       file_get_cache_dir(void) BD_ATTR_MALLOC;
+BD_PRIVATE char *       file_get_config_dir(const char *file) BD_ATTR_MALLOC;
 
-BD_PRIVATE char *       file_load(const char *path, uint32_t *p_size);
+BD_PRIVATE char *       file_load(const char *path, uint32_t *p_size) BD_ATTR_MALLOC;
 
 
 #endif

@@ -68,11 +68,12 @@ int crypto_init()
 
 char *bdplus_disc_cache_file(bdplus_t *plus, const char *file)
 {
-    const char *base = file_get_cache_dir();
+    char *base = file_get_cache_dir();
     char vid_str[33];
     char *result;
     print_hex(vid_str, plus->volumeID, 16);
     result = str_printf("%s/%s/%s", base ? base : "/tmp/", vid_str, file);
+    X_FREE(base);
     file_mkpath(result);
     return result;
 }

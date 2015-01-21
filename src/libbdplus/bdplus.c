@@ -91,8 +91,11 @@ int32_t bdplus_get_code_date(bdplus_t *plus)
 
 static char *_slots_file(void)
 {
-    const char *base = file_get_cache_dir();
-    return str_printf("%s/slots.bin", base ? base : "/tmp/");
+    char *base = file_get_cache_dir();
+    char *result;
+    result = str_printf("%s/slots.bin", base ? base : "/tmp/");
+    X_FREE(base);
+    return result;
 }
 
 static void _load_slots(bdplus_t *plus)

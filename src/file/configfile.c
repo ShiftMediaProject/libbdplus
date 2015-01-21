@@ -25,6 +25,7 @@
 
 #include "dirs.h"
 #include "util/logging.h"
+#include "util/macro.h"
 #include "util/strutl.h"
 
 #include <stdio.h>
@@ -76,15 +77,14 @@ int file_mkpath(const char *path)
     return result;
 }
 
-const char *file_get_cache_dir(void)
+char *file_get_cache_dir(void)
 {
-    static const char *dir = NULL;
+    char *cache = file_get_cache_home();
+    char *dir;
 
-    if (!dir) {
-        const char *cache = file_get_cache_home();
-        dir = str_printf("%s/%s", cache ? cache : "/tmp/", BDPLUS_DIR);
-        file_mkpath(dir);
-    }
+    dir = str_printf("%s/%s", cache ? cache : "/tmp/", BDPLUS_DIR);
+    X_FREE(cache);
+    file_mkpath(dir);
 
     return dir;
 }
@@ -110,6 +110,7 @@ char *file_get_config_dir(const char *file)
 {
     char *dir = NULL;
     const char *vm;
+    char *config_home;
     const char *base;
 
     vm = getenv("BDPLUS_VM_ID");
@@ -118,8 +119,9 @@ char *file_get_config_dir(const char *file)
     }
 
     /* try home directory */
-    base = file_get_config_home();
-    dir = _probe_config_dir(base, vm, file);
+    config_home = file_get_config_home();
+    dir = _probe_config_dir(config_home, vm, file);
+    X_FREE(config_home);
     if (dir) {
         return dir;
     }
