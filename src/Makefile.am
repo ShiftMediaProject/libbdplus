@@ -43,6 +43,7 @@ libbdplus_la_SOURCES=\
 	util/attributes.h \
 	util/macro.h \
 	util/mutex.h \
+	util/mutex.c \
 	util/strutl.c \
 	util/strutl.h \
 	util/logging.c \

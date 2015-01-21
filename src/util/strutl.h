@@ -23,12 +23,14 @@
 
 #include "attributes.h"
 
+#include <stdint.h>
+
+BD_PRIVATE char * str_dup(const char *str) BD_ATTR_MALLOC;
 BD_PRIVATE char * str_printf(const char *fmt, ...) BD_ATTR_FORMAT_PRINTF(1,2) BD_ATTR_MALLOC;
-#if 0
-BD_PRIVATE int    str_match(const char *string, const char *regexp, int icase);
-#endif
 
 BD_PRIVATE char * str_skip_white(char *p);
 BD_PRIVATE char * str_next_line(char *p);
+
+BD_PRIVATE char * str_print_hex(char *out, const uint8_t *str, int count);
 
 #endif // STRUTL_H_

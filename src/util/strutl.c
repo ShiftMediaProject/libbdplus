@@ -24,12 +24,17 @@
 
 #include "strutl.h"
 
+#include "macro.h"
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#ifdef HAVE_REGEX_H
-#include <regex.h>
-#endif
+#include <string.h>
+
+char * str_dup(const char *str)
+{
+  return str ? strcpy (malloc(strlen(str) + 1), str) : NULL;
+}
 
 char * str_printf(const char *fmt, ...)
 {
@@ -66,34 +71,6 @@ char * str_printf(const char *fmt, ...)
     }
 }
 
-/*
- * Regular expression function. Here a string is tested to see if it matches a
- * particular regular expression. Setting icase to a non-zero value will set
- * the regular expression to ignore case in match.
- */
-#if 0
-int str_match(const char *string, const char *regexp, int icase) {
-#ifdef HAVE_REGEX_H
-    regex_t re;
-    int flags = REG_EXTENDED | REG_NOSUB;
-    if (icase) {
-        flags |= REG_ICASE;
-    }
-    if (!regcomp(&re, regexp, flags)) {
-        return 0;
-    }
-    int status = regexec(&re, string, 0, NULL, 0);
-    regfree(&re);
-    if (!status) {
-        return 0;
-    }
-#else
-#warning System does not have POSIX regex support.
-#endif
-    return 1;
-}
-#endif
-
 char *str_next_line(char *p)
 {
     while (*p && *p != '\r' && *p != '\n') {
@@ -113,4 +90,14 @@ char *str_skip_white(char *p)
     }
 
     return p;
+}
+
+char *str_print_hex(char *out, const uint8_t *buf, int count)
+{
+    int zz;
+    for (zz = 0; zz < count; zz++) {
+        sprintf(out + (zz * 2), "%02x", buf[zz]);
+    }
+
+    return out;
 }

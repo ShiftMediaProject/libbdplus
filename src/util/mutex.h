@@ -37,28 +37,39 @@
 
 #include <errno.h>
 
-typedef struct bd_mutex_s BD_MUTEX;
-struct bd_mutex_s {
-    CRITICAL_SECTION cs;
-};
+typedef CRITICAL_SECTION BD_MUTEX;
 
-#define bd_mutex_lock(m) \
-  (EnterCriticalSection(&m->cs), 0)
+static inline int bd_mutex_lock(BD_MUTEX *p) {
+    EnterCriticalSection(p);
+    return 0;
+}
 
-#define bd_mutex_unlock(m) \
-  (LeaveCriticalSection(&m->cs), 0)
+static inline int bd_mutex_unlock(BD_MUTEX *p) {
+    LeaveCriticalSection(p);
+    return 0;
+}
 
-#define bd_mutex_trylock(m) \
-  (TryEnterCriticalSection(&m->cs) ? 0 : EBUSY)
+#if 0
+static int bd_mutex_trylock(BD_MUTEX *p) {
+    return TryEnterCriticalSection(p) ? 0 : EBUSY;
+}
+#endif
 
-#define bd_mutex_init(m) \
-  (InitializeCriticalSection(&m->cs), 0)
+static inline int bd_mutex_init(BD_MUTEX *p) {
+    InitializeCriticalSection(p);
+    return 0;
+}
 
-#define bd_mutex_destroy(m) \
-  (DeleteCriticalSection(&m->cs), 0)
+static inline int bd_mutex_destroy(BD_MUTEX *p) {
+    DeleteCriticalSection(p);
+    return 0;
+}
 
 
 #elif defined(HAVE_PTHREAD_H)
+
+#include "logging.h"
+#include "macro.h"
 
 /*
  * recursive mutex
@@ -71,27 +82,8 @@ struct bd_mutex_s {
     pthread_mutex_t mutex;
 };
 
-static inline int bd_mutex_init(BD_MUTEX *p)
-{
-    p->owner      = (pthread_t)-1;
-    p->lock_count = 0;
-
-    if (pthread_mutex_init(&p->mutex, NULL)) {
-        BD_DEBUG(DBG_BLURAY|DBG_CRIT, "bd_mutex_init() failed !\n");
-        return -1;
-    }
-
-    return 0;
-}
-
-static inline int bd_mutex_destroy(BD_MUTEX *p)
-{
-    if (pthread_mutex_destroy(&p->mutex)) {
-        BD_DEBUG(DBG_BLURAY|DBG_CRIT, "bd_mutex_destroy() failed !\n");
-        return -1;
-    }
-    return 0;
-}
+BD_PRIVATE int bd_mutex_init(BD_MUTEX *p);
+BD_PRIVATE int bd_mutex_destroy(BD_MUTEX *p);
 
 static int bd_mutex_lock(BD_MUTEX *p)
 {

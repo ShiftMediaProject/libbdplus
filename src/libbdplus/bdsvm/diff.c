@@ -25,6 +25,7 @@
 #include "util/macro.h"
 #include "util/strutl.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -179,20 +180,20 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
     char str[512];
     DEBUG(DBG_BDPLUS,"[diff] namehash: %s\n",
-          print_hex(str, namehash, shalen));
+          str_print_hex(str, namehash, shalen));
 
     // Hash it.
     gcry_md_hash_buffer(GCRY_MD_SHA1, digest, namehash, shalen - 1);
 
     memset(str, 0, sizeof(str));
     DEBUG(DBG_BDPLUS,"[diff] find hashdb: %s\n",
-          print_hex(str, digest, sizeof(digest)));
+          str_print_hex(str, digest, sizeof(digest)));
 
     while(fread(&sha_hdr, sizeof(sha_hdr), 1, fd) == 1) {
 
         memset(str, 0, sizeof(str));
         DEBUG(DBG_BDPLUS,"[diff] read hashdb: %s\n",
-              print_hex(str, sha_hdr.digest, sizeof(digest)));
+              str_print_hex(str, sha_hdr.digest, sizeof(digest)));
 
         sha_hdr.next = FETCH4((uint8_t *)&sha_hdr.next);
 

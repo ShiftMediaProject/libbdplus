@@ -29,6 +29,7 @@
 
 #include "util/logging.h"
 #include "util/macro.h"
+#include "util/strutl.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -594,9 +595,9 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
     char str[128];
     DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] Key %2u, %3u: %s\n", conv_tab->current_table,
           conv_tab->current_segment,
-          print_hex(str, key, 16));
-    DEBUG(DBG_BDPLUS," mask: %s\n", print_hex(str, mask, 8));
-    DEBUG(DBG_BDPLUS,"Q: %s\n", print_hex(str, mask, 39));
+          str_print_hex(str, key, 16));
+    DEBUG(DBG_BDPLUS," mask: %s\n", str_print_hex(str, mask, 8));
+    DEBUG(DBG_BDPLUS,"Q: %s\n", str_print_hex(str, mask, 39));
 
     if ( conv_tab->current_table >=  conv_tab->numTables) {
         DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] decrypt, current_table (%d) >= numTables! help?!\n",

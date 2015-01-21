@@ -24,8 +24,10 @@
 
 #ifdef _WIN32
 # define DIR_SEP "\\"
+# define DIR_SEP_CHAR '\\'
 #else
 # define DIR_SEP "/"
+# define DIR_SEP_CHAR '/'
 #endif
 
 /*

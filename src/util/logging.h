@@ -29,16 +29,16 @@ enum debug_mask_enum {
     DBG_RESERVED   = 0x0001,
     DBG_CONFIGFILE = 0x0002,
     DBG_FILE       = 0x0004,
-    DBG_AACS       = 0x0008,
-    DBG_MKB        = 0x0010,
-    DBG_MMC        = 0x0020,
+  //DBG_AACS       = 0x0008,
+  //DBG_MKB        = 0x0010,
+  //DBG_MMC        = 0x0020,
     DBG_BLURAY     = 0x0040,
     DBG_DIR        = 0x0080,
-    DBG_NAV        = 0x0100,
+  //DBG_NAV        = 0x0100,
     DBG_BDPLUS     = 0x0200,
     DBG_DLX        = 0x0400,
     DBG_CRIT       = 0x0800,         // this is libbluray's default debug mask so use this if you want to display critical info
-    DBG_HDMV       = 0x1000,
+  //DBG_HDMV       = 0x1000,
 
     DBG_BDPLUS_TRAP  = 0x100000 | DBG_BDPLUS,
     DBG_BDPLUS_EVENT = 0x200000 | DBG_BDPLUS,
@@ -57,7 +57,6 @@ BD_PRIVATE extern uint32_t debug_mask;
 
 #define BD_DEBUG DEBUG
 
-BD_PRIVATE char *print_hex(char *out, const uint8_t *str, int count);
 BD_PRIVATE void bd_debug(const char *file, int line, uint32_t mask, const char *format, ...) BD_ATTR_FORMAT_PRINTF(4,5);
 
 

@@ -38,6 +38,7 @@
 
 #include <inttypes.h>
 #include <string.h>
+#include <stdio.h>   /* SEEK_* */
 #if HAVE_TIME_H
 #include <time.h>
 #endif

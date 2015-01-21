@@ -21,22 +21,14 @@
 
 #include "logging.h"
 
+#include "file/file.h"
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 
 uint32_t debug_mask = (uint32_t)-1; /* set all bits to make sure bd_debug() is called for initialization */
-
-char *print_hex(char *out, const uint8_t *buf, int count)
-{
-    int zz;
-    for(zz = 0; zz < count; zz++) {
-        sprintf(out + (zz * 2), "%02X", buf[zz]);
-    }
-
-    return out;
-}
 
 void bd_debug(const char *file, int line, uint32_t mask, const char *format, ...)
 {
@@ -69,10 +61,11 @@ void bd_debug(const char *file, int line, uint32_t mask, const char *format, ...
     }
 
     if (mask & debug_mask) {
+        const char *f = strrchr(file, DIR_SEP_CHAR);
         char buffer[4096], *pt = buffer;
         va_list args;
 
-        pt += sprintf(buffer, "%s:%d: ", file, line);
+        pt += sprintf(buffer, "%s:%d: ", f ? f + 1 : file, line);
 
         va_start(args, format);
         vsnprintf(pt, sizeof(buffer) - (size_t)(intptr_t)(pt - buffer) - 1, format, args);
