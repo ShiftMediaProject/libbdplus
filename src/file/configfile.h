@@ -20,7 +20,7 @@
 #ifndef BDPLUS_CONFIGFILE_H
 #define BDPLUS_CONFIGFILE_H
 
-#include <util/attributes.h>
+#include "util/attributes.h"
 
 #include <stdint.h>
 #include <stdio.h>

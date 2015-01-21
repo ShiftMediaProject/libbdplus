@@ -200,5 +200,5 @@ AC_SUBST(LT_VERSION_INFO)
 
 dnl generate output files
 AC_SUBST(SET_FEATURES)
-AC_CONFIG_FILES([Makefile src/Makefile src/libbdplus.pc src/libbdplus/bdplus-version.h])
+AC_CONFIG_FILES([Makefile src/libbdplus.pc src/libbdplus/bdplus-version.h])
 AC_OUTPUT
