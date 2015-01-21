@@ -40,6 +40,7 @@ libbdplus_la_SOURCES=\
 	src/libbdplus/bdsvm/sha1.c \
 	src/file/dirs.h \
 	src/file/file.h \
+	src/file/filesystem.h \
 	src/file/file_default.c \
 	src/file/file_default.h \
 	src/file/configfile.c \
