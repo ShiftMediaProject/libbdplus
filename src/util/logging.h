@@ -48,14 +48,12 @@ typedef enum debug_mask_enum debug_mask_t;
 
 BD_PRIVATE extern uint32_t debug_mask;
 
-#define DEBUG(MASK,...) \
+#define BD_DEBUG(MASK,...) \
   do {                                                  \
     if (BD_UNLIKELY((MASK) & debug_mask)) {             \
       bd_debug(__FILE__,__LINE__,MASK,__VA_ARGS__);     \
     }                                                   \
   } while (0)
-
-#define BD_DEBUG DEBUG
 
 BD_PRIVATE void bd_debug(const char *file, int line, uint32_t mask, const char *format, ...) BD_ATTR_FORMAT_PRINTF(4,5);
 

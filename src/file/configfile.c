@@ -60,10 +60,10 @@ int file_mkpath(const char *path)
         *end = 0;
 
         if (stat(dir, &s) != 0 || !S_ISDIR(s.st_mode)) {
-            DEBUG(DBG_FILE, "Creating directory %s\n", dir);
+            BD_DEBUG(DBG_FILE, "Creating directory %s\n", dir);
 
             if (mkdir(dir, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
-                DEBUG(DBG_FILE | DBG_CRIT, "Error creating directory %s\n", dir);
+                BD_DEBUG(DBG_FILE | DBG_CRIT, "Error creating directory %s\n", dir);
                 result = 0;
                 break;
             }
@@ -97,11 +97,11 @@ static char *_probe_config_dir(const char *base, const char *vm, const char *fil
     if (fp) {
         fclose(fp);
         *(strrchr(dir, '/') + 1) = 0;
-        DEBUG(DBG_BDPLUS, "Found VM config from %s\n", dir);
+        BD_DEBUG(DBG_BDPLUS, "Found VM config from %s\n", dir);
         return dir;
     }
 
-    DEBUG(DBG_BDPLUS, "VM config not found from  %s\n", dir);
+    BD_DEBUG(DBG_BDPLUS, "VM config not found from  %s\n", dir);
     free(dir);
     return NULL;
 }
@@ -149,7 +149,7 @@ static char *_load_fp(FILE *fp, uint32_t *p_size)
     fseek(fp, 0, SEEK_SET);
 
     if (file_size < MIN_FILE_SIZE || file_size > MAX_FILE_SIZE) {
-        DEBUG(DBG_FILE, "Invalid file size\n");
+        BD_DEBUG(DBG_FILE, "Invalid file size\n");
         return NULL;
     }
 
@@ -157,7 +157,7 @@ static char *_load_fp(FILE *fp, uint32_t *p_size)
     read_size = fread(data, 1, file_size, fp);
 
     if (read_size != file_size) {
-        DEBUG(DBG_FILE, "Error reading file\n");
+        BD_DEBUG(DBG_FILE, "Error reading file\n");
         free(data);
         return NULL;
     }
@@ -179,7 +179,7 @@ char *file_load(const char *path, uint32_t *p_size)
     fp = fopen(path, "rb");
 
     if (!fp) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Error loading %s\n", path);
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Error loading %s\n", path);
         return NULL;
     }
 

@@ -32,7 +32,7 @@ void bdplus_send_event(VM *vm, uint32_t eventID, uint32_t arg1,
                        uint32_t table, uint32_t segment)
 {
 
-    DEBUG(DBG_BDPLUS_EVENT,"[bdplus] ** posting EVENT %X (%08X, %d, %d)\n", eventID,
+    BD_DEBUG(DBG_BDPLUS_EVENT,"[bdplus] ** posting EVENT %X (%08X, %d, %d)\n", eventID,
           arg1, table, segment);
 
     if (!vm || !vm->addr) return;

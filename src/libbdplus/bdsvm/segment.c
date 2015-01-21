@@ -182,7 +182,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     if (!Table || !len) return -1;
 
 
-    DEBUG(DBG_BDPLUS,"[segment] Starting decode of conv_tab.bin: %p (%d)\n", Table, len);
+    BD_DEBUG(DBG_BDPLUS,"[segment] Starting decode of conv_tab.bin: %p (%d)\n", Table, len);
 
     ct = *conv_tab;
 
@@ -204,7 +204,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     numTables = FETCHU2(&Table[ptr]);
 
     if (ct->numTables && (ct->numTables != numTables)) {
-        DEBUG(DBG_BDPLUS,"[segment] Warning, numTables changed between conv_tab parts!\n");
+        BD_DEBUG(DBG_BDPLUS,"[segment] Warning, numTables changed between conv_tab parts!\n");
     }
 
     ct->numTables = numTables;
@@ -224,7 +224,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     }
 
 
-    DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", numTables);
+    BD_DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", numTables);
 
     for (table = 0; table < numTables; table++) {
         uint32_t tableID;
@@ -237,7 +237,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
         ptr += 4;
 
         if (subtable->tableID && (subtable->tableID != tableID)) {
-            DEBUG(DBG_BDPLUS,"[segment] Warning: tableID changed %08X != %08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[segment] Warning: tableID changed %08X != %08X\n",
                    subtable->tableID, tableID);
         }
         subtable->tableID = tableID;
@@ -252,13 +252,13 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
         if (!numSegments) continue;
 
         if (subtable->numSegments && (subtable->numSegments != numSegments)) {
-            DEBUG(DBG_BDPLUS,"[segment] Warning: numSegments changed %08X != %08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[segment] Warning: numSegments changed %08X != %08X\n",
                    subtable->numSegments, numSegments);
         }
 
         subtable->numSegments = numSegments;
 
-        DEBUG(DBG_BDPLUS,"[segment] Table %d ID %08X, %u segments\n",
+        BD_DEBUG(DBG_BDPLUS,"[segment] Table %d ID %08X, %u segments\n",
                table, subtable->tableID, subtable->numSegments);
 
         // Allocate area if required
@@ -288,7 +288,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
             // Don't allocate if no entries
             if (!segment->numEntries) continue;
 
-            DEBUG(DBG_BDPLUS,"   Segment %d offset %08X -> %d entries\n",
+            BD_DEBUG(DBG_BDPLUS,"   Segment %d offset %08X -> %d entries\n",
                    currseg, offset-4, segment->numEntries);
 
             segment->Entries = (entry_t *) malloc(sizeof(entry_t) *
@@ -338,11 +338,11 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
         // offset should point at the very end of the last entry, which
         // should be the next table
-        DEBUG(DBG_BDPLUS,"[segment] Table done. Setting ptr to %08X\n", offset);
+        BD_DEBUG(DBG_BDPLUS,"[segment] Table done. Setting ptr to %08X\n", offset);
         ptr = offset;
     } // for table
 
-    DEBUG(DBG_BDPLUS,"[segments] Done parsing. %d segments need decrypting.\n",
+    BD_DEBUG(DBG_BDPLUS,"[segments] Done parsing. %d segments need decrypting.\n",
            encrypted_segments);
 
     return ct->numTables;
@@ -357,7 +357,7 @@ int32_t segment_freeTable(conv_table_t **Table)
     subtable_t *subtable;
     segment_t *segment;
 
-    DEBUG(DBG_BDPLUS,"[segment] freeing conv_tab.bin\n");
+    BD_DEBUG(DBG_BDPLUS,"[segment] freeing conv_tab.bin\n");
 
     ct = *Table;
 
@@ -411,12 +411,12 @@ int32_t segment_setSegment(conv_table_t *conv_tab,
     }
 
     if (table >= conv_tab->numTables) {
-        DEBUG(DBG_BDPLUS,"[segment] failed to locate tableID %u.\n", tableID);
+        BD_DEBUG(DBG_BDPLUS,"[segment] failed to locate tableID %u.\n", tableID);
         table = 0;
         //return 1; // Function should probably signal failures.
     }
 
-    DEBUG(DBG_BDPLUS,"[segment] Set to table %u (tableID %u) and segment %u\n",
+    BD_DEBUG(DBG_BDPLUS,"[segment] Set to table %u (tableID %u) and segment %u\n",
            table, conv_tab->Tables[ table ].tableID,
            segment);
 
@@ -451,7 +451,7 @@ int32_t segment_nextSegment(conv_table_t *conv_tab,
                 conv_tab->current_table   = table;
                 conv_tab->current_segment = segment;
 
-                DEBUG(DBG_BDPLUS,"[segment] next set to table %d segment %d (tableID %u)\n",
+                BD_DEBUG(DBG_BDPLUS,"[segment] next set to table %d segment %d (tableID %u)\n",
                        table, segment,
                        conv_tab->Tables[ table ].tableID);
 
@@ -487,7 +487,7 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
 {
     uint32_t numMergeTables, ctable, i;
 
-    DEBUG(DBG_BDPLUS,"[segment] Merging tables.. \n");
+    BD_DEBUG(DBG_BDPLUS,"[segment] Merging tables.. \n");
 
     // Count the number of "new" tableIDs in set2.
     numMergeTables = 0;
@@ -499,7 +499,7 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
                 set1->Tables[ i ].tableID) {
                 if (set1->Tables[i].numSegments !=
                     set2->Tables[ctable].numSegments) {
-                    DEBUG(DBG_BDPLUS,"[segment] Warning, skipping tableID but differenting numSegments\n");
+                    BD_DEBUG(DBG_BDPLUS,"[segment] Warning, skipping tableID but differenting numSegments\n");
                 } // if numSegments
                 break;
             } // tableID == tableID
@@ -513,7 +513,7 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
 
     } // for set2
 
-    DEBUG(DBG_BDPLUS,"[segment] Received %u new tableIDs to merge.\n",
+    BD_DEBUG(DBG_BDPLUS,"[segment] Received %u new tableIDs to merge.\n",
            numMergeTables);
     if (!numMergeTables) return 0;
 
@@ -523,7 +523,7 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
                                           sizeof(subtable_t));
     if (!set1->Tables) {
         set1->numTables = 0;
-        DEBUG(DBG_BDPLUS,"[segment] Out of memory.\n");
+        BD_DEBUG(DBG_BDPLUS,"[segment] Out of memory.\n");
         return 0;
     }
 
@@ -540,7 +540,7 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
 
         if (!set2->Tables[ ctable ].merge) continue;
 
-        DEBUG(DBG_BDPLUS,"[segment] merging tableID %08X, numSegments %u\n",
+        BD_DEBUG(DBG_BDPLUS,"[segment] merging tableID %08X, numSegments %u\n",
                set2->Tables[ ctable ].tableID,
                set2->Tables[ ctable ].numSegments);
 
@@ -558,7 +558,7 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
 
     set1->numTables += numMergeTables;
 
-    DEBUG(DBG_BDPLUS,"[segment] Merge complete. New total tables %u.\n",
+    BD_DEBUG(DBG_BDPLUS,"[segment] Merge complete. New total tables %u.\n",
            set1->numTables);
 
     return numMergeTables;
@@ -588,19 +588,19 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
     if (conv_tab->current_segment == 0xFFFFFFFF) return 0;
 
     if (!memcmp(key, empty, 16)) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] WARNING: receiverd empty segment key\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] WARNING: receiverd empty segment key\n");
     }
 
 
     char str[128];
-    DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] Key %2u, %3u: %s\n", conv_tab->current_table,
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] Key %2u, %3u: %s\n", conv_tab->current_table,
           conv_tab->current_segment,
           str_print_hex(str, key, 16));
-    DEBUG(DBG_BDPLUS," mask: %s\n", str_print_hex(str, mask, 8));
-    DEBUG(DBG_BDPLUS,"Q: %s\n", str_print_hex(str, mask, 39));
+    BD_DEBUG(DBG_BDPLUS," mask: %s\n", str_print_hex(str, mask, 8));
+    BD_DEBUG(DBG_BDPLUS,"Q: %s\n", str_print_hex(str, mask, 39));
 
     if ( conv_tab->current_table >=  conv_tab->numTables) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] decrypt, current_table (%d) >= numTables! help?!\n",
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] decrypt, current_table (%d) >= numTables! help?!\n",
               conv_tab->numTables);
         return 0;
     }
@@ -617,11 +617,11 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
 
         if (memcmp(segment->key, empty, 16)) {
             /* old key was not empty */
-            DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] WARNING: Segment already decrypted with different key\n");
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] WARNING: Segment already decrypted with different key\n");
             return 0;
         }
 
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] Old key was empty, decrypting again with new key\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] Old key was empty, decrypting again with new key\n");
     }
 
     memcpy(segment->key,   key, sizeof(segment->key));
@@ -669,7 +669,7 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
         switch((entry->flags>>6) & 0x3) {
 
         case 0:
-            DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 0. Don't know what to do\n");
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 0. Don't know what to do\n");
             break;
 
         case 1: // Type 1, always active.
@@ -687,7 +687,7 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
             }
 
             // Bit was not set, so it is in-active, and should be removed...
-            DEBUG(DBG_BDPLUS,"[segment] removing entry %3u (flags %02X: bits %u => byte %u, set %02X to false)\n",
+            BD_DEBUG(DBG_BDPLUS,"[segment] removing entry %3u (flags %02X: bits %u => byte %u, set %02X to false)\n",
                    currentry, entry->flags & 0xC0,
                    bits,7-(bits >> 3), 1<<(bits&0x07));
 
@@ -714,12 +714,12 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
             break;
 
         case 3:
-            DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 3. Don't know what to do\n");
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 3. Don't know what to do\n");
             entry->active = 0;
             break;
 
         default:
-            DEBUG(DBG_BDPLUS,"[segment] I can't get here.\n");
+            BD_DEBUG(DBG_BDPLUS,"[segment] I can't get here.\n");
             break;
 
         } // switch flags
@@ -727,7 +727,7 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
     } // for entries
 
     if (removed)
-        DEBUG(DBG_BDPLUS,"[segment] cleaned out %u entries.\n", removed);
+        BD_DEBUG(DBG_BDPLUS,"[segment] cleaned out %u entries.\n", removed);
 
     return 1;
 }
@@ -759,7 +759,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
     if (!ct) return -1;
 
-    DEBUG(DBG_BDPLUS,"[segment] saving convTable\n");
+    BD_DEBUG(DBG_BDPLUS,"[segment] saving convTable\n");
 
     // Sort based on tableID ?
     qsort(ct->Tables,             // Base
@@ -771,7 +771,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
     STORE2((uint8_t *)&u16, ct->numTables);
     rval = fwrite(&u16, sizeof(u16), 1, fd);
     if(rval != 1)
-      DEBUG(DBG_BDPLUS,"[segment] Unable to write number of tables\n");
+      BD_DEBUG(DBG_BDPLUS,"[segment] Unable to write number of tables\n");
 
     // We use "offset" to keep track of where we are, and were we WILL write
     // entries, for the index-offset-array we write at the start of each
@@ -782,7 +782,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
         subtable = &ct->Tables[ table ];
 
-        DEBUG(DBG_BDPLUS,"[segment] Saving table %u tableID %08X, numSegments %u\n",
+        BD_DEBUG(DBG_BDPLUS,"[segment] Saving table %u tableID %08X, numSegments %u\n",
                table, subtable->tableID, subtable->numSegments);
 
         STORE4((uint8_t *)&u32, subtable->tableID);
@@ -799,7 +799,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
         for (currseg = 0; currseg < subtable->numSegments; currseg++) {
             segment = &subtable->Segments[ currseg ];
 
-            //DEBUG(DBG_BDPLUS,"[segment] segment offset %08X computed %08X\n",
+            //BD_DEBUG(DBG_BDPLUS,"[segment] segment offset %08X computed %08X\n",
             //       segment->offset, offset);
             //STORE4((uint8_t *)&u32, segment->offset);
             STORE4((uint8_t *)&u32, offset);
@@ -819,7 +819,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
             segment = &subtable->Segments[ currseg ];
 
             // seek to make sure we are at the right offset?
-            //DEBUG(DBG_BDPLUS,"[segment] save offset(%08X)\n", segment->offset);
+            //BD_DEBUG(DBG_BDPLUS,"[segment] save offset(%08X)\n", segment->offset);
 
             // This code is broken after merging tables.
             //            if (segment->offset)
@@ -907,7 +907,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
     uint64_t offset;
     int32_t firsttime = 10;
 
-    DEBUG(DBG_BDPLUS,"segment: direct patch title %d started.\n", table);
+    BD_DEBUG(DBG_BDPLUS,"segment: direct patch title %d started.\n", table);
 
     subtable = &ct->Tables[ table ];
 
@@ -924,16 +924,16 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 
 #if 1
             if (firsttime) {
-                DEBUG(DBG_BDPLUS,"[segment] index   %04X\n", entry->index);
-                DEBUG(DBG_BDPLUS,"[segment] flags   %02X\n", entry->flags);
-                DEBUG(DBG_BDPLUS,"[segment] adjust0 %04X\n", entry->patch0_address_adjust);
-                DEBUG(DBG_BDPLUS,"[segment] adjust1 %04X\n", entry->patch1_address_adjust);
-                DEBUG(DBG_BDPLUS,"[segment] offset0 %02X\n", entry->patch0_buffer_offset);
-                DEBUG(DBG_BDPLUS,"[segment] offset1 %02X\n", entry->patch1_buffer_offset);
-                DEBUG(DBG_BDPLUS,"[segment] patch0  %02X%02X%02X%02X%02X\n",
+                BD_DEBUG(DBG_BDPLUS,"[segment] index   %04X\n", entry->index);
+                BD_DEBUG(DBG_BDPLUS,"[segment] flags   %02X\n", entry->flags);
+                BD_DEBUG(DBG_BDPLUS,"[segment] adjust0 %04X\n", entry->patch0_address_adjust);
+                BD_DEBUG(DBG_BDPLUS,"[segment] adjust1 %04X\n", entry->patch1_address_adjust);
+                BD_DEBUG(DBG_BDPLUS,"[segment] offset0 %02X\n", entry->patch0_buffer_offset);
+                BD_DEBUG(DBG_BDPLUS,"[segment] offset1 %02X\n", entry->patch1_buffer_offset);
+                BD_DEBUG(DBG_BDPLUS,"[segment] patch0  %02X%02X%02X%02X%02X\n",
                        entry->patch0[0],entry->patch0[1],entry->patch0[2],
                        entry->patch0[3],entry->patch0[4]);
-                DEBUG(DBG_BDPLUS,"[segment] patch1  %02X%02X%02X%02X%02X\n",
+                BD_DEBUG(DBG_BDPLUS,"[segment] patch1  %02X%02X%02X%02X%02X\n",
                        entry->patch1[0],entry->patch1[1],entry->patch1[2],
                        entry->patch1[3],entry->patch1[4]);
             }
@@ -947,7 +947,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
                       (uint64_t)entry->patch0_buffer_offset);
 
             if (firsttime) {
-                DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch0\n",
+                BD_DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch0\n",
                        offset);
             }
 
@@ -972,7 +972,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
                       (uint64_t)entry->patch1_buffer_offset);
 
             if (firsttime) {
-                DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch1\n",
+                BD_DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch1\n",
                        offset);
             }
 
@@ -1002,10 +1002,10 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
 {
     int table = -1;
 
-    DEBUG(DBG_BDPLUS, "set_m2ts(%05u.m2ts)\n", m2ts);
+    BD_DEBUG(DBG_BDPLUS, "set_m2ts(%05u.m2ts)\n", m2ts);
 
     if (!ct || !ct->numTables) {
-        DEBUG(DBG_CRIT, "set_m2ts(%05u.m2ts): no tables !\n", m2ts);
+        BD_DEBUG(DBG_CRIT, "set_m2ts(%05u.m2ts): no tables !\n", m2ts);
         return NULL;
     }
 
@@ -1018,11 +1018,11 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
     }
 
     if (table < 0) {
-        DEBUG(DBG_BDPLUS, "no conversion table %05u.m2ts\n", m2ts);
+        BD_DEBUG(DBG_BDPLUS, "no conversion table %05u.m2ts\n", m2ts);
         return NULL;
     }
 
-    DEBUG(DBG_BDPLUS, "using table index %d for %05u.m2ts\n", table, m2ts);
+    BD_DEBUG(DBG_BDPLUS, "using table index %d for %05u.m2ts\n", table, m2ts);
 
     /* empty table -> no patching needed */
     int segments = 0;
@@ -1030,13 +1030,13 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
         segments += ct->Tables[table].Segments[ii].numEntries;
     }
     if (segments < 1) {
-        DEBUG(DBG_BDPLUS, "conversion table is empty\n");
+        BD_DEBUG(DBG_BDPLUS, "conversion table is empty\n");
         return NULL;
     }
 
     /* table not decrypted ? */
     if (ct->Tables[table].Segments[0].encrypted) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "conversion table for %05d.m2ts is still encrypted\n", m2ts);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "conversion table for %05d.m2ts is still encrypted\n", m2ts);
         return NULL;
     }
 
@@ -1047,7 +1047,7 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
     st->stream_table = table;
     st->table = ct;
 
-    DEBUG(DBG_BDPLUS,"[segment] settable(%05u.m2ts): %p\n", m2ts, st);
+    BD_DEBUG(DBG_BDPLUS,"[segment] settable(%05u.m2ts): %p\n", m2ts, st);
 
     return st;
 }
@@ -1063,7 +1063,7 @@ int32_t segment_patchseek(bdplus_st_t *ct, uint64_t offset)
     ct->stream_offset = offset;
     ct->next_patch_offset = 0;
 
-    DEBUG(DBG_BDPLUS,"[segment] seek: %016"PRIx64"\n", offset);
+    BD_DEBUG(DBG_BDPLUS,"[segment] seek: %016"PRIx64"\n", offset);
 
     return 0;
 }
@@ -1082,7 +1082,7 @@ int32_t segment_patch(bdplus_st_t *ct, int len, uint8_t *buffer)
     uint32_t currentry, currseg;
     int32_t patches=0;
 
-    DEBUG(DBG_BDPLUS,
+    BD_DEBUG(DBG_BDPLUS,
           "[segment] read(len %d): %016"PRIx64"\n",
           len, ct->stream_offset);
 

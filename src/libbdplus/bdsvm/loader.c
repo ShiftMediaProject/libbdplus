@@ -68,7 +68,7 @@ static int _code_version_check(uint8_t *hdr, int *p_gen, int *p_date)
         }
     }
 
-    DEBUG(DBG_BDPLUS, "[bdplus] BD+ code created: %04d-%02d-%02d (BD+ generation %d)\n", year, month, day, gen);
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] BD+ code created: %04d-%02d-%02d (BD+ generation %d)\n", year, month, day, gen);
 
     if (p_gen) {
         *p_gen = gen;
@@ -78,7 +78,7 @@ static int _code_version_check(uint8_t *hdr, int *p_gen, int *p_date)
     }
 
     if (gen > 3) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] WARNING: BD+ generation %d not tested / supported\n", gen);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] WARNING: BD+ generation %d not tested / supported\n", gen);
         return -1;
     }
 
@@ -92,12 +92,12 @@ int32_t loader_load_svm(BDPLUS_FILE_H *fp, const char *fname, VM *vm, int *p_gen
 
     // Read BD SVM header
     if (file_read(fp, addr, 0x18) != 0x18) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading header from %s\n", fname);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading header from %s\n", fname);
         return -1;
     }
 
     if (memcmp(addr, "BDSVM_CC", 8)) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] %s failed signature match\n", fname);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] %s failed signature match\n", fname);
     }
 
     _code_version_check(addr, p_gen, p_date);
@@ -105,22 +105,22 @@ int32_t loader_load_svm(BDPLUS_FILE_H *fp, const char *fname, VM *vm, int *p_gen
     // Pull out length
     len = FETCH4(&addr[0x14]);
 
-    DEBUG(DBG_BDPLUS,"[bdplus] svm size %08X (%u)\n", len, len);
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] svm size %08X (%u)\n", len, len);
 
     if (len >= dlx_getAddrSize(vm)) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] Section too long (%d) in %s\n", len, fname);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[bdplus] Section too long (%d) in %s\n", len, fname);
         return -1;
     }
 
     // read length data
     if (file_read(fp, addr, len) != len) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading section from %s\n", fname);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error reading section from %s\n", fname);
         return -1;
     }
 
     file_close(fp);
 
-    DEBUG(DBG_BDPLUS,"[bdplus] loaded core '%s'\n", fname);
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] loaded core '%s'\n", fname);
 
     // clear first 0x1000 bytes
     memset(addr, 0, 0x1000);
