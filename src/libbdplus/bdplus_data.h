@@ -22,6 +22,7 @@
 #define BDPLUS_DATA_H_INCLUDED
 
 #include "util/attributes.h"
+#include "util/mutex.h"
 
 #include "internal.h"
 
@@ -54,7 +55,7 @@ struct bdplus_s {
 
     struct bdplus_config_s *config;
 
-    struct bd_mutex_s  *mutex;
+    BD_MUTEX *mutex;
 
     uint8_t   loaded;
     uint8_t   started;

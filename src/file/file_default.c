@@ -21,12 +21,6 @@
 #include "config.h"
 #endif
 
-#if defined(__MINGW32__)
-/* fseeko64() prototypes from stdio.h */
-#   undef __STRICT_ANSI__
-#   define fseeko fseeko64
-#endif
-
 #include "file_default.h"
 
 #include "file.h"
@@ -36,6 +30,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
+#if defined(__MINGW32__)
+/* fseeko64() prototypes from stdio.h */
+#   undef __STRICT_ANSI__
+#   define fseeko fseeko64
+#endif
 
 static void _file_close(BDPLUS_FILE_H *file)
 {

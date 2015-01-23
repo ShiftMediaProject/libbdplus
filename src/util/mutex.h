@@ -85,7 +85,7 @@ struct bd_mutex_s {
 BD_PRIVATE int bd_mutex_init(BD_MUTEX *p);
 BD_PRIVATE int bd_mutex_destroy(BD_MUTEX *p);
 
-static int bd_mutex_lock(BD_MUTEX *p)
+static inline int bd_mutex_lock(BD_MUTEX *p)
 {
     if (pthread_equal(p->owner, pthread_self())) {
         /* recursive lock */
@@ -104,7 +104,7 @@ static int bd_mutex_lock(BD_MUTEX *p)
     return 0;
 }
 
-static int bd_mutex_unlock(BD_MUTEX *p)
+static inline int bd_mutex_unlock(BD_MUTEX *p)
 {
     if (!pthread_equal(p->owner, pthread_self())) {
         BD_DEBUG(DBG_BLURAY|DBG_CRIT, "bd_mutex_unlock(): not owner !\n");
