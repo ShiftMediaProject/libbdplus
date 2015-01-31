@@ -22,11 +22,6 @@
 #include "config.h"
 #endif
 
-#if defined(__MINGW32__)
-/* ftello64() and fseeko64() prototypes from stdio.h */
-#   undef __STRICT_ANSI__
-#endif
-
 #include "trap.h"
 #include "trap_helper.h"
 #include "diff.h"
@@ -34,24 +29,21 @@
 
 #include "libbdplus/bdplus_config.h"
 
+#include "file/file.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
-
 
 #include <gcrypt.h>
 
 #include <inttypes.h>
 #include <string.h>
+#include <stdio.h>   /* SEEK_* */
 #if HAVE_TIME_H
 #include <time.h>
 #endif
 #if HAVE_SYS_TIME_H
 #include <sys/time.h>
-#endif
-
-#if defined(__MINGW32__)
-#  define fseeko fseeko64
 #endif
 
 /* Set this in CFLAGS to debug gcrypt MPIs and S-expressions */
@@ -67,7 +59,7 @@
 
 uint32_t TRAP_Finished(void)
 {
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Finished()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Finished()\n");
     return STATUS_OK; // Not used
 
 }
@@ -75,14 +67,14 @@ uint32_t TRAP_Finished(void)
 
 uint32_t TRAP_FixUpTableSend(uint32_t len)
 {
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_FixUpTableSend(%u/%u)\n", (unsigned int)len, (unsigned int)(len* sizeof(uint32_t)));
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_FixUpTableSend(%u/%u)\n", (unsigned int)len, (unsigned int)(len* sizeof(uint32_t)));
 
 #if 0
     if (len) {
         FILE *fd;
         fd = fopen("dat/conv_tab2.bin", "wb");
         if (fd) {
-            DEBUG(DBG_BDPLUS,"[TRAP] writing dat/conv_tab.bin\n");
+            BD_DEBUG(DBG_BDPLUS,"[TRAP] writing dat/conv_tab.bin\n");
             fwrite(Table, len * sizeof(uint32_t), 1, fd);
             fclose(fd);
         }
@@ -145,10 +137,10 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
     uint8_t decryptedKey[AES_BLOCK_SIZE]; // Temporary key
     char errstr[100];
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Aes(KeyID %08X)\n", opOrKeyID);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Aes(KeyID %08X)\n", opOrKeyID);
 
     if (opOrKeyID == 0xFFF10002) {
-        DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT, "[TRAP] TRAP_Aes(AES_ECB_DECRYPT_MEDIA_KEY) not implemented\n");
+        BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT, "[TRAP] TRAP_Aes(AES_ECB_DECRYPT_MEDIA_KEY) not implemented\n");
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -162,13 +154,13 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
     switch(opOrKeyID) {
 
     case 0xFFF10000: // AES_ENCRYPT
-        DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_ENCRYPT): %p->%p (%d)\n", src, dst, len);
+        BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_ENCRYPT): %p->%p (%d)\n", src, dst, len);
         gcry_err = gcry_cipher_setkey(gcry_h, key, AES_BLOCK_SIZE);
         if (gcry_err)
         {
           memset(errstr, 0, sizeof(errstr));
           gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-          DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_ENCRYPT) %s.\n", errstr);
+          BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_ENCRYPT) %s.\n", errstr);
         }
         for (i = 0; i < len; i++) {
             gcry_err =
@@ -179,7 +171,7 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
             {
               memset(errstr, 0, sizeof(errstr));
               gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-              DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_ENCRYPT) step %d: %s.\n",
+              BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_ENCRYPT) step %d: %s.\n",
                     i, errstr);
             }
         }
@@ -190,13 +182,13 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
         // TODO
 
     case 0xFFF10001: // AES_DECRYPT
-        DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_DECRYPT): %p->%p (%d)\n", src, dst, len);
+        BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_DECRYPT): %p->%p (%d)\n", src, dst, len);
         gcry_err = gcry_cipher_setkey(gcry_h, key, AES_BLOCK_SIZE);
         if (gcry_err)
         {
           memset(errstr, 0, sizeof(errstr));
           gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-          DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT) %s.\n", errstr);
+          BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT) %s.\n", errstr);
         }
         for (i = 0; i < len; i++) {
             gcry_err =
@@ -207,22 +199,22 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
             {
               memset(errstr, 0, sizeof(errstr));
               gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-              DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT) step %d: %s.\n",
+              BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT) step %d: %s.\n",
                     i, errstr);
             }
         }
         break;
 
     default:         // decryption with encrypted key using secret player keys
-        DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS): %p->%p (%d key %d)\n", src, dst, len, opOrKeyID);
+        BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS): %p->%p (%d key %d)\n", src, dst, len, opOrKeyID);
 
         if (!config || !config->aes_keys) {
-            DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_Aes: AES keys not loaded.\n");
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_Aes: AES keys not loaded.\n");
             return STATUS_INVALID_PARAMETER;
         }
 
         if ((int)opOrKeyID >= config->num_aes_keys) {
-            DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS): Key %u does not exist in config.\n", opOrKeyID);
+            BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS): Key %u does not exist in config.\n", opOrKeyID);
             return STATUS_INVALID_PARAMETER;
         }
 
@@ -232,7 +224,7 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
         {
           memset(errstr, 0, sizeof(errstr));
           gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-          DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) %s.\n",
+          BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) %s.\n",
                 errstr);
         }
 
@@ -245,7 +237,7 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
         {
           memset(errstr, 0, sizeof(errstr));
           gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-          DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) %s.\n",
+          BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) %s.\n",
                 errstr);
         }
 
@@ -254,7 +246,7 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
         {
           memset(errstr, 0, sizeof(errstr));
           gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-          DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) %s.\n",
+          BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) %s.\n",
                 errstr);
         }
 
@@ -267,7 +259,7 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
             {
               memset(errstr, 0, sizeof(errstr));
               gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-              DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) "
+              BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS) "
                     "step %d: %s.\n",
                     i, errstr);
             }
@@ -366,7 +358,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     char errstr[100];
 
     if (!config || !config->ecdsa_keys) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_PrivateKey: ECDSA keys not loaded.\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_PrivateKey: ECDSA keys not loaded.\n");
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -400,7 +392,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     uint8_t *r = NULL, *s = NULL;
     uint8_t hash[SHA_DIGEST_LENGTH];
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_PrivateKey(%X, %08X)\n", keyID, controlWord);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_PrivateKey(%X, %08X)\n", keyID, controlWord);
 
     if ( keyID > 1 )
         return STATUS_INVALID_PARAMETER;
@@ -428,7 +420,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     /* Dump information about the hash MPI when debugging */
     if (GCRYPT_DEBUG)
     {
-      DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) mpi_hash dump\n",
+      BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) mpi_hash dump\n",
             keyID, controlWord);
       gcry_mpi_dump(mpi_hash);
     }
@@ -453,7 +445,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     /* Dump information about the data s-expression when debugging */
     if (GCRYPT_DEBUG)
     {
-      DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_data dump\n",
+      BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_data dump\n",
             keyID, controlWord);
       gcry_sexp_dump(sexp_data);
     }
@@ -573,7 +565,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     {
       memset(errstr, 0, sizeof(errstr));
       gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-      DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_PrivateKey(%X, %08X) error building "
+      BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_PrivateKey(%X, %08X) error building "
             "sexp_key: %s\n",
             keyID, controlWord, errstr);
     }
@@ -581,7 +573,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     /* Dump information about the key s-expression when debugging */
     if (GCRYPT_DEBUG)
     {
-      DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_key dump\n",
+      BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_key dump\n",
             keyID, controlWord);
       gcry_sexp_dump(sexp_key);
     }
@@ -598,7 +590,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     {
       memset(errstr, 0, sizeof(errstr));
       gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
-      DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_PrivateKey(%X, %08X) error signing "
+      BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_PrivateKey(%X, %08X) error signing "
             "data: %s\n",
             keyID, controlWord, errstr);
     }
@@ -606,7 +598,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     /* Dump information about the signature s-expression when debugging */
     if (GCRYPT_DEBUG)
     {
-      DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_sig dump\n",
+      BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_sig dump\n",
             keyID, controlWord);
       gcry_sexp_dump(sexp_sig);
     }
@@ -618,10 +610,10 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     /* Dump information about 'r' and 's' values when debugging */
     if (GCRYPT_DEBUG)
     {
-      DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_r dump\n",
+      BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_r dump\n",
             keyID, controlWord);
       gcry_sexp_dump(sexp_r);
-      DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_s dump\n",
+      BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_PrivateKey(%X, %08X) sexp_s dump\n",
             keyID, controlWord);
       gcry_sexp_dump(sexp_s);
     }
@@ -652,7 +644,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
 // write <len> random bytes to <dst>
 uint32_t TRAP_Random(uint8_t *dst, uint32_t len)
 {
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Random(%u)\n", len);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Random(%u)\n", len);
 
     gcry_randomize(dst, len, GCRY_STRONG_RANDOM);
     return STATUS_OK;
@@ -673,7 +665,7 @@ uint32_t TRAP_Random(uint8_t *dst, uint32_t len)
 //     memcpy(&dst[ 16 ], &sha->h4, sizeof(sha->h4) );
 // 
 //     // Move all 4 bytes first:
-//     DEBUG(DBG_BDPLUS,"reference: copying all even 4s from %u\n", len);
+//     BD_DEBUG(DBG_BDPLUS,"reference: copying all even 4s from %u\n", len);
 //     i = 0;
 //     xlen = len;
 //     while(xlen >= 4) {
@@ -683,7 +675,7 @@ uint32_t TRAP_Random(uint8_t *dst, uint32_t len)
 //         i += 4;
 //     }
 // 
-//     DEBUG(DBG_BDPLUS,"reference: dealing with half-words: %u\n", len-i);
+//     BD_DEBUG(DBG_BDPLUS,"reference: dealing with half-words: %u\n", len-i);
 // 
 //     // Deal with the remainder.
 //     switch(len - i) {
@@ -705,7 +697,7 @@ uint32_t TRAP_Random(uint8_t *dst, uint32_t len)
 // 
 //     // Update len field, if needed
 //     if (total_len) {
-//         DEBUG(DBG_BDPLUS,"reference: updating total size %u\n", total_len);
+//         BD_DEBUG(DBG_BDPLUS,"reference: updating total size %u\n", total_len);
 // 
 //         dst[340] = (uint8_t) ( total_len & 0xFF );
 //         dst[348] = (uint8_t) (( total_len * 8 ) & 0xFF );
@@ -745,7 +737,7 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
 
     switch(op) {
     case SHA_INIT:
-        DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(INIT)\n");
+        BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(INIT)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
         memset(dst, 0, 352); //352, according to jumper snapshots
         sha_SHA1_Init(&matched_ctx->sha);
@@ -754,7 +746,7 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
         break;
 
     case SHA_UPDATE:
-        DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(UPDATE)\n");
+        BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(UPDATE)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
         sha_SHA1_Update(&matched_ctx->sha, src, len);
         // This call is not required, only here to make "dst" be identical
@@ -766,7 +758,7 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
       {
         uint8_t digest[20];
 
-        DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(FINAL)\n");
+        BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(FINAL)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
         // UPDATE if we were also given data.
         TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
@@ -782,7 +774,7 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
       }
 
     case SHA_BLOCK:
-        DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(BLOCK)\n");
+        BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(BLOCK)\n");
         gcry_md_hash_buffer(GCRY_MD_SHA1, dst, src, len);
         break;
     default: // Unknown op
@@ -825,7 +817,7 @@ uint32_t TRAP_AddWithCarry(uint32_t *dst, uint32_t *src, uint32_t len)
     uint32_t valA, valB;
     uint64_t sum;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_AddWithCarry(%p + %p) %d \n", dst, src, len);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_AddWithCarry(%p + %p) %d \n", dst, src, len);
 
     /*
     for (i = 0; i < len*4; i++) {
@@ -873,7 +865,7 @@ uint32_t TRAP_MultiplyWithCarry(uint32_t *dst, uint32_t *src, uint32_t len, uint
     uint32_t val;
     int i;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MultiplyWithCarry(%08X) %d\n", multiplicand, len);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MultiplyWithCarry(%08X) %d\n", multiplicand, len);
 
     /*
     for (i = 0; i < len*4; i++) {
@@ -914,7 +906,7 @@ uint32_t TRAP_XorBlock(uint32_t *dst, uint32_t *src, uint32_t len)
 {
     uint32_t i;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_XorBlock()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_XorBlock()\n");
 
     for (i = 0; i<len; i++)
         dst[i] = src[i] ^ dst[i];
@@ -925,7 +917,7 @@ uint32_t TRAP_XorBlock(uint32_t *dst, uint32_t *src, uint32_t len)
 
 uint32_t TRAP_Memmove(uint8_t *dst, uint8_t *src, uint32_t len)
 {
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Memmove()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Memmove()\n");
 
     memmove(dst, src, len);
 
@@ -947,7 +939,7 @@ uint32_t TRAP_MemSearch(uint8_t *Region, uint32_t RegionLen, uint8_t *SearchData
 {
     uint32_t i, j;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MemSearch(): %d, %d\n", RegionLen, SearchDataLen);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MemSearch(): %d, %d\n", RegionLen, SearchDataLen);
 
     if ( RegionLen == 0 ) {
         *Dst = 0;
@@ -980,7 +972,7 @@ uint32_t TRAP_MemSearch(uint8_t *Region, uint32_t RegionLen, uint8_t *SearchData
             if (Region[i + j] != SearchData[ j ]) break;//differs,stop j,loop i
         } // j
         if (j == SearchDataLen) { // j loop got to end, all equals!
-            DEBUG(DBG_BDPLUS,"[TRAP] found at %08X + %08X = %08X\n", *Dst, i, *Dst + i);
+            BD_DEBUG(DBG_BDPLUS,"[TRAP] found at %08X + %08X = %08X\n", *Dst, i, *Dst + i);
             *Dst += i;  // Region offset
             return STATUS_OK;
         }
@@ -992,7 +984,7 @@ uint32_t TRAP_MemSearch(uint8_t *Region, uint32_t RegionLen, uint8_t *SearchData
 
 uint32_t TRAP_Memset(uint8_t *dst, uint8_t fillvalue, uint32_t len)
 {
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Memset(%02X) %d\n", fillvalue, len);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Memset(%02X) %d\n", fillvalue, len);
 
     memset(dst, fillvalue, len);
 
@@ -1002,7 +994,7 @@ uint32_t TRAP_Memset(uint8_t *dst, uint8_t fillvalue, uint32_t len)
 
 uint32_t TRAP_ApplicationLayer(bdplus_config_t *config, uint32_t dev, uint32_t opID, uint32_t *buf)
 {
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_ApplicationLayer(%08X %X)\n", dev, opID);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_ApplicationLayer(%08X %X)\n", dev, opID);
 
     if ( dev >= 3 )
         return STATUS_INVALID_PARAMETER;
@@ -1012,7 +1004,7 @@ uint32_t TRAP_ApplicationLayer(bdplus_config_t *config, uint32_t dev, uint32_t o
         return STATUS_INVALID_PARAMETER;
 
     if (!config || !config->regs) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] ApplicationLayer: WARNING player registers not available!\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] ApplicationLayer: WARNING player registers not available!\n");
         return STATUS_OK;
     }
 
@@ -1030,7 +1022,7 @@ uint32_t TRAP_ApplicationLayer(bdplus_config_t *config, uint32_t dev, uint32_t o
         uint32_t val = FETCH4((uint8_t*)buf);
         config->psr_write(config->regs, 102+dev, val);
     }
-    DEBUG(DBG_BDPLUS,"[TRAP] ApplicationLayer: WARNING %s PSR10%d! (0x%08x)\n",
+    BD_DEBUG(DBG_BDPLUS,"[TRAP] ApplicationLayer: WARNING %s PSR10%d! (0x%08x)\n",
           opID?"writing to":"reading from", dev+2, buf[0]);
 
     return STATUS_OK; // snapshots return OK.
@@ -1043,7 +1035,7 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
     struct tm *tnow;
     struct timeval tp;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_DeviceDiscovery(%u,%u,%u):\n", dev, qID, *pLen);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_DeviceDiscovery(%u,%u,%u):\n", dev, qID, *pLen);
 
     if (!*pLen)
         return STATUS_INVALID_PARAMETER;
@@ -1055,7 +1047,7 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
         return STATUS_NOT_SUPPORTED;
 
     if (!config || !config->dev) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_Discovery: data not loaded.\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_Discovery: data not loaded.\n");
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -1106,7 +1098,7 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
             *pLen = len;
             return STATUS_OK;
         default:
-            DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for dev 1: %d\n", qID);
+            BD_DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for dev 1: %d\n", qID);
             break;
         }
 
@@ -1137,12 +1129,12 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
             return STATUS_INVALID_PARAMETER;
 
         default:
-            DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for dev 2: %d\n", qID);
+            BD_DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for dev 2: %d\n", qID);
             break;
         } // qID
 
     default:
-        DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for unknown dev %d: %d\n", dev, qID);
+        BD_DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for unknown dev %d: %d\n", dev, qID);
         break;
 
     } // switch dev
@@ -1159,54 +1151,52 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
 //
 // Filename "00001" -> "BDSVM/00001.svm".
 //
-uint32_t TRAP_LoadContentCode(const char *device_path, uint8_t *FileName, uint32_t Section, uint32_t Unknown, uint32_t *len, uint8_t *dst)
+uint32_t TRAP_LoadContentCode(bdplus_config_t *config, uint8_t *FileName, uint32_t Section, uint32_t Unknown, uint32_t *len, uint8_t *dst)
 {
-    FILE *fd;
+    BDPLUS_FILE_H *fd;
     int64_t rbytes;
-    uint8_t *fname;
+    char *fname;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_LoadContentCode('%s':%08X -> %p)\n", FileName, *len, dst);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_LoadContentCode('%s':%08X -> %p)\n", FileName, *len, dst);
 
 
     // Build the real filename.
-    fname = (uint8_t *)
-        str_printf("%s/BDSVM/%s.svm",
-                   device_path,
-                   (char *) FileName);
+    fname = str_printf("BDSVM/%s.svm", (char *) FileName);
 
-    DEBUG(DBG_BDPLUS,"[TRAP] reading '%s': unknown %08X\n", fname, Unknown);
+    BD_DEBUG(DBG_BDPLUS,"[TRAP] reading '%s': unknown %08X\n", fname, Unknown);
 
-    fd = fopen((char *)fname, "rb");
+    fd = file_open(config, fname);
     X_FREE(fname);
+
     if (!fd) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: cant open %s\n", (char*)fname);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: cant open %s\n", (char*)FileName);
         return STATUS_INVALID_PARAMETER; // FIXME
     }
 
     // Skip the SVM header.
-    if (fseek(fd, SVM_HEADER_SIZE, SEEK_SET) < 0) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s (header) failed\n", (char*)fname);
-        fclose(fd);
+    if (file_seek(fd, SVM_HEADER_SIZE, SEEK_SET) < 0) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s (header) failed\n", (char*)FileName);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
-    if (fseek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)fname, Section);
-        fclose(fd);
+    if (file_seek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)FileName, Section);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
 
     // They assume the memory wraps, and sometimes deliberately load near the
     // end of the memory.
-    DEBUG(DBG_BDPLUS,"[TRAP] reading %d/%08X bytes into %p\n", *len, *len, dst);
-    rbytes = fread(dst, 1, *len, fd);
+    BD_DEBUG(DBG_BDPLUS,"[TRAP] reading %d/%08X bytes into %p\n", *len, *len, dst);
+    rbytes = file_read(fd, dst, *len);
     if (rbytes < 0 || rbytes != (int64_t)*len) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: read %"PRId64" bytes of %d from %s\n", rbytes, *len, (char*)fname);
-        fclose(fd);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: read %"PRId64" bytes of %d from %s\n", rbytes, *len, (char*)FileName);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
-    fclose(fd);
+    file_close(fd);
 
-    DEBUG(DBG_BDPLUS,"[TRAP] read %"PRId64" bytes. %p-%p\n", rbytes, dst, &dst[rbytes]);
+    BD_DEBUG(DBG_BDPLUS,"[TRAP] read %"PRId64" bytes. %p-%p\n", rbytes, dst, &dst[rbytes]);
     *len = rbytes;
 
     return 0;
@@ -1219,10 +1209,10 @@ uint32_t TRAP_DiscoveryRAM(bdplus_config_t *config, uint32_t src, uint8_t *buffe
     uint32_t address;
 
     //[dlx] DiscoveryRAM(00000000, 00002E58, 00002000)
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_DiscoveryRAM(%08X): %d\n", src, len);
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_DiscoveryRAM(%08X): %d\n", src, len);
 
     if (!config || !config->ram) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_DiscoveryRAM: data not loaded.\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_DiscoveryRAM: data not loaded.\n");
         return STATUS_INVALID_PARAMETER;
     }
 
@@ -1250,7 +1240,7 @@ uint32_t TRAP_DiscoveryRAM(bdplus_config_t *config, uint32_t src, uint8_t *buffe
                 uint32_t a   = address - ram->start_address;
                 val.u32 = *(const uint32_t *)(&ram->mem[ a & (~3) ]);
                 buffer[i] = val.u8[(a & 3) ^ 3];
-                DEBUG(DBG_BDPLUS, "[TRAP] Reading RAM at register %d[%04d] val 0x%08x [%d]=> 0x%02X\n", ram->type, a / 4, val.u32, a & 3, val.u8[a & 3]);
+                BD_DEBUG(DBG_BDPLUS, "[TRAP] Reading RAM at register %d[%04d] val 0x%08x [%d]=> 0x%02X\n", ram->type, a / 4, val.u32, a & 3, val.u8[a & 3]);
             } else {
                 buffer[i] = ram->mem[ address - ram->start_address ];
             }
@@ -1262,7 +1252,7 @@ uint32_t TRAP_DiscoveryRAM(bdplus_config_t *config, uint32_t src, uint8_t *buffe
             if ( address > 0x400000 ) {
                 buffer[i] = 0x00;
             } else {
-                DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] reading from unmapped address 0x%x\n", address);
+                BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] reading from unmapped address 0x%x\n", address);
             }
         }
     }
@@ -1270,24 +1260,14 @@ uint32_t TRAP_DiscoveryRAM(bdplus_config_t *config, uint32_t src, uint8_t *buffe
     return STATUS_OK;
 }
 
-uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t FileNameLen, uint32_t FileOffsetHigh, uint32_t FileOffsetLow, uint32_t *len, uint8_t *dst)
+uint32_t TRAP_MediaCheck(bdplus_config_t *config, uint8_t *FileName, uint32_t FileNameLen, uint32_t FileOffsetHigh, uint32_t FileOffsetLow, uint32_t *len, uint8_t *dst)
 {
     uint8_t buffer[SHA_BLOCK_SIZE]; // fix me
-    FILE *fd;
+    BDPLUS_FILE_H *fd;
     uint32_t j;
     uint64_t seek;
-    uint8_t *full_name;
 
-    DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MediaCheck(%d/%d)\n", *len, FileNameLen);
-
-
-
-    // Build the real filename.
-    full_name = (uint8_t *)
-        str_printf("%s/%s",
-                   device_path,
-                   FileName
-                   );
+    BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_MediaCheck(%d/%d)\n", *len, FileNameLen);
 
 #if 0
     // Skip past "BDMV/" if string starts with it..
@@ -1301,15 +1281,17 @@ uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t Fi
 
     seek = ((uint64_t)FileOffsetHigh << 32) | (uint64_t)FileOffsetLow;
 
-    DEBUG(DBG_BDPLUS,"[TRAP] reading '%s' at pos %016"PRIx64" from %s\n",
-          FileName, seek,
-          full_name);
+    BD_DEBUG(DBG_BDPLUS,"[TRAP] reading '%s' at pos %016"PRIx64"\n", FileName, seek);
 
-    fd = fopen((char *)full_name, "rb");
-    X_FREE(full_name);
-
+    fd = file_open(config, (char *)FileName);
     if (!fd) {
-        DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
+        file_close(fd);
+        return STATUS_INVALID_PARAMETER;
+    }
+#if 0
+    if (!fd) {
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
         // Attempt to load it via hashdb
         full_name = (uint8_t *)str_printf("%s/hash_db.bin", device_path);
         j =  diff_hashdb_load(full_name,
@@ -1318,34 +1300,35 @@ uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t Fi
         X_FREE(full_name);
         return j;
     }
+#endif
 
-    if (fseeko(fd, seek, SEEK_SET)) {
-        DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to seek %s to %"PRIu64"\n", (char *)FileName, seek);
-        fclose(fd);
+    if (file_seek(fd, seek, SEEK_SET)) {
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to seek %s to %"PRIu64"\n", (char *)FileName, seek);
+        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
 
     for (j = 0; j < ((*len) / SHA_BLOCK_SIZE); j++) {  // "/ 0x200"
 
-        if (fread(buffer, SHA_BLOCK_SIZE, 1, fd) != 1) {
-            DEBUG(DBG_BDPLUS,"[TRAP] MediaCheck warning short read: %d\n", j);
+        if (file_read(fd, buffer, SHA_BLOCK_SIZE) != SHA_BLOCK_SIZE) {
+            BD_DEBUG(DBG_BDPLUS,"[TRAP] MediaCheck warning short read: %d\n", j);
             break;
         }
-        DEBUG(DBG_BDPLUS,"[TRAP] read bytes and SHA_BLOCK\n");
+        BD_DEBUG(DBG_BDPLUS,"[TRAP] read bytes and SHA_BLOCK\n");
 
         gcry_md_hash_buffer(GCRY_MD_SHA1, &dst[ j*SHA_DIGEST_LENGTH ],
                             buffer, SHA_BLOCK_SIZE);
     }
 
-    fclose(fd);
+    file_close(fd);
 
     *len = j * SHA_BLOCK_SIZE;
-    DEBUG(DBG_BDPLUS,"[TRAP] MediaCheck returning size %08X\n", j * SHA_BLOCK_SIZE);
+    BD_DEBUG(DBG_BDPLUS,"[TRAP] MediaCheck returning size %08X\n", j * SHA_BLOCK_SIZE);
 
     for (j = 0; j < SHA_DIGEST_LENGTH; j++) {
-        DEBUG(DBG_BDPLUS,"%02X ", dst[ j ]);
+        BD_DEBUG(DBG_BDPLUS,"%02X ", dst[ j ]);
     }
-    DEBUG(DBG_BDPLUS,"\n");
+    BD_DEBUG(DBG_BDPLUS,"\n");
 
 
     return STATUS_OK;
@@ -1354,7 +1337,7 @@ uint32_t TRAP_MediaCheck(const char *device_path, uint8_t *FileName, uint32_t Fi
 #if 0
 uint32_t TRAP_RunNative()
 {
-    DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_RunNative()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_RunNative()\n");
 
     return 0;
 }
@@ -1363,7 +1346,7 @@ uint32_t TRAP_RunNative()
 #if 0
 uint32_t TRAP_000570(/* ? nop/vendor specific?*/)
 {
-    DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_000570()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_000570()\n");
 
     return 0;
 }
@@ -1371,7 +1354,7 @@ uint32_t TRAP_000570(/* ? nop/vendor specific?*/)
 
 uint32_t TRAP_DebugLog(uint8_t *txt, uint32_t len)
 {
-    DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_DebugLog(%d): '%s'\n", len, ((len > 0)&&txt&&*txt) ? (char *)txt : "(null)");
+    BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_DebugLog(%d): '%s'\n", len, ((len > 0)&&txt&&*txt) ? (char *)txt : "(null)");
 
     return STATUS_INTERNAL_ERROR;
 }
@@ -1380,7 +1363,7 @@ uint32_t TRAP_DebugLog(uint8_t *txt, uint32_t len)
 #if 0
 uint32_t TRAP_008020()
 {
-    DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_008020()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_008020()\n");
 
     return STATUS_NOT_SUPPORTED;
 }
@@ -1389,7 +1372,7 @@ uint32_t TRAP_008020()
 #if 0
 uint32_t TRAP_008030()
 {
-    DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_008030()\n");
+    BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT,"[TRAP] TRAP_008030()\n");
 
     return STATUS_NOT_SUPPORTED;
 }

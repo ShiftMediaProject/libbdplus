@@ -1,6 +1,6 @@
 /*
- * This file is part of libbluray
- * Copyright (C) 2011-2013  VideoLAN
+ * This file is part of libbdplus
+ * Copyright (C) 2015  VideoLAN
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,20 +17,27 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BDPLUS_FILE_H
-#define BDPLUS_FILE_H
+#ifndef FILE_H_
+#define FILE_H_
 
-#include <util/attributes.h>
+#include "filesystem.h"
 
-#include <stdint.h>
-#include <stdio.h>
-
-BD_PRIVATE int          file_mkpath(const char *path);
-
-BD_PRIVATE const char * file_get_cache_dir(void);
-BD_PRIVATE char *       file_get_config_dir(const char *file);
-
-BD_PRIVATE char *       file_load(const char *path, uint32_t *p_size);
-
-
+#ifdef _WIN32
+# define DIR_SEP "\\"
+# define DIR_SEP_CHAR '\\'
+#else
+# define DIR_SEP "/"
+# define DIR_SEP_CHAR '/'
 #endif
+
+/*
+ * file access
+ */
+
+#define file_close(X)    X->close(X)
+#define file_seek(X,Y,Z) X->seek(X,Y,Z)
+#define file_read(X,Y,Z) X->read(X,Y,Z)
+
+#define file_open(cfg, fname) (cfg->fopen(cfg->fopen_handle, fname))
+
+#endif /* FILE_H_ */

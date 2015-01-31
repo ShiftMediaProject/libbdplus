@@ -17,23 +17,20 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BLURAY_DIRS_H
-#define BLURAY_DIRS_H
+#ifndef BDPLUS_CONFIGFILE_H
+#define BDPLUS_CONFIGFILE_H
 
 #include "util/attributes.h"
 
-#ifdef _WIN32
-BD_PRIVATE int         win32_mkdir(const char *dir);
-#endif
+#include <stdint.h>
+#include <stdio.h>
 
-/*
- * Config, cache and data dirs
- */
+BD_PRIVATE int          file_mkpath(const char *path);
 
-BD_PRIVATE const char *file_get_config_system(const char *dir);
+BD_PRIVATE char *       file_get_cache_dir(void) BD_ATTR_MALLOC;
+BD_PRIVATE char *       file_get_config_dir(const char *file) BD_ATTR_MALLOC;
 
-BD_PRIVATE char *file_get_config_home(void) BD_ATTR_MALLOC;
-BD_PRIVATE char *file_get_cache_home(void) BD_ATTR_MALLOC;
-BD_PRIVATE char *file_get_data_home(void) BD_ATTR_MALLOC;
+BD_PRIVATE char *       file_load(const char *path, uint32_t *p_size) BD_ATTR_MALLOC;
+
 
 #endif

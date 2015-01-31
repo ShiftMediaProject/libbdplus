@@ -25,6 +25,7 @@
 #include "util/macro.h"
 #include "util/strutl.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -78,7 +79,7 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
     fd = fopen(fname, "rb");
     if (!fd) return errno;
 
-    DEBUG(DBG_BDPLUS,"[diff] opened '%s' to find trap %d...\n", fname, trap);
+    BD_DEBUG(DBG_BDPLUS,"[diff] opened '%s' to find trap %d...\n", fname, trap);
 
     if (fread(&size, sizeof(size), 1, fd) != 1) goto fail;
     if (fread(&count, sizeof(count), 1, fd) != 1) goto fail;
@@ -87,7 +88,7 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
     size  = FETCH4((uint8_t*)&size);
     count = FETCH4((uint8_t*)&count);
 
-    DEBUG(DBG_BDPLUS,"[diff] Memory size is %08X, num diff-files %08X\n", size, count);
+    BD_DEBUG(DBG_BDPLUS,"[diff] Memory size is %08X, num diff-files %08X\n", size, count);
 
     if (trap >= count) return -1;
 
@@ -101,7 +102,7 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
     for (currtrap = 0; currtrap <= trap; currtrap++) {
         if (fread(&diffcnt, sizeof(diffcnt), 1, fd) != 1) goto fail;
         diffcnt = FETCH4((uint8_t*)&diffcnt);
-        DEBUG(DBG_BDPLUS,"       trap %08X has %d diffs\n", currtrap, diffcnt);
+        BD_DEBUG(DBG_BDPLUS,"       trap %08X has %d diffs\n", currtrap, diffcnt);
         for (currdiff = 0; currdiff < diffcnt; currdiff++) {
             if (fread(&start,  sizeof(diffcnt), 1, fd) != 1) goto fail;
             if (fread(&length, sizeof(diffcnt), 1, fd) != 1) goto fail;
@@ -136,7 +137,7 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
     return 0;
 
  fail:
-    DEBUG(DBG_BDPLUS,"[diff] archive failed at reading trap %08X diff %08X\n",
+    BD_DEBUG(DBG_BDPLUS,"[diff] archive failed at reading trap %08X diff %08X\n",
            currtrap, currdiff);
     fclose(fd);
     return -1;
@@ -160,7 +161,7 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
     struct sha_hdr_s sha_hdr;
     uint32_t shalen;
 
-    DEBUG(DBG_BDPLUS,"[diff] Attempting to open '%s' looking for '%s'\n",
+    BD_DEBUG(DBG_BDPLUS,"[diff] Attempting to open '%s' looking for '%s'\n",
           hashname, fname);
 
     fd = fopen((char *)hashname, "rb");
@@ -178,34 +179,34 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
            (char *)fname);
 
     char str[512];
-    DEBUG(DBG_BDPLUS,"[diff] namehash: %s\n",
-          print_hex(str, namehash, shalen));
+    BD_DEBUG(DBG_BDPLUS,"[diff] namehash: %s\n",
+          str_print_hex(str, namehash, shalen));
 
     // Hash it.
     gcry_md_hash_buffer(GCRY_MD_SHA1, digest, namehash, shalen - 1);
 
     memset(str, 0, sizeof(str));
-    DEBUG(DBG_BDPLUS,"[diff] find hashdb: %s\n",
-          print_hex(str, digest, sizeof(digest)));
+    BD_DEBUG(DBG_BDPLUS,"[diff] find hashdb: %s\n",
+          str_print_hex(str, digest, sizeof(digest)));
 
     while(fread(&sha_hdr, sizeof(sha_hdr), 1, fd) == 1) {
 
         memset(str, 0, sizeof(str));
-        DEBUG(DBG_BDPLUS,"[diff] read hashdb: %s\n",
-              print_hex(str, sha_hdr.digest, sizeof(digest)));
+        BD_DEBUG(DBG_BDPLUS,"[diff] read hashdb: %s\n",
+              str_print_hex(str, sha_hdr.digest, sizeof(digest)));
 
         sha_hdr.next = FETCH4((uint8_t *)&sha_hdr.next);
 
         if (!memcmp(digest, sha_hdr.digest, sizeof(digest))) {
             // Found the digest we are looking for
             sha_hdr.len = FETCH4((uint8_t *)&sha_hdr.len);
-            DEBUG(DBG_BDPLUS,"[diff] found digest, reading %08X (%u) bytes...\n",
+            BD_DEBUG(DBG_BDPLUS,"[diff] found digest, reading %08X (%u) bytes...\n",
                    sha_hdr.next - (uint32_t)sizeof(sha_hdr.len),
                    sha_hdr.next - (uint32_t)sizeof(sha_hdr.len));
 
             // Read in all digests, perhaps error checking?
             if (!fread(dst, sha_hdr.next - sizeof(sha_hdr.len), 1, fd)) {
-                DEBUG(DBG_BDPLUS,"[diff] Short read on hash_db.bin!\n");
+                BD_DEBUG(DBG_BDPLUS,"[diff] Short read on hash_db.bin!\n");
             }
             // Update new len
             *len = sha_hdr.len;

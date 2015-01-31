@@ -21,10 +21,11 @@
 # include "config.h"
 #endif
 
-#include "file.h"
+#include "configfile.h"
 
 #include "dirs.h"
 #include "util/logging.h"
+#include "util/macro.h"
 #include "util/strutl.h"
 
 #include <stdio.h>
@@ -59,10 +60,10 @@ int file_mkpath(const char *path)
         *end = 0;
 
         if (stat(dir, &s) != 0 || !S_ISDIR(s.st_mode)) {
-            DEBUG(DBG_FILE, "Creating directory %s\n", dir);
+            BD_DEBUG(DBG_FILE, "Creating directory %s\n", dir);
 
             if (mkdir(dir, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
-                DEBUG(DBG_FILE | DBG_CRIT, "Error creating directory %s\n", dir);
+                BD_DEBUG(DBG_FILE | DBG_CRIT, "Error creating directory %s\n", dir);
                 result = 0;
                 break;
             }
@@ -76,15 +77,14 @@ int file_mkpath(const char *path)
     return result;
 }
 
-const char *file_get_cache_dir(void)
+char *file_get_cache_dir(void)
 {
-    static const char *dir = NULL;
+    char *cache = file_get_cache_home();
+    char *dir;
 
-    if (!dir) {
-        const char *cache = file_get_cache_home();
-        dir = str_printf("%s/%s", cache ? cache : "/tmp/", BDPLUS_DIR);
-        file_mkpath(dir);
-    }
+    dir = str_printf("%s/%s", cache ? cache : "/tmp/", BDPLUS_DIR);
+    X_FREE(cache);
+    file_mkpath(dir);
 
     return dir;
 }
@@ -97,11 +97,11 @@ static char *_probe_config_dir(const char *base, const char *vm, const char *fil
     if (fp) {
         fclose(fp);
         *(strrchr(dir, '/') + 1) = 0;
-        DEBUG(DBG_BDPLUS, "Found VM config from %s\n", dir);
+        BD_DEBUG(DBG_BDPLUS, "Found VM config from %s\n", dir);
         return dir;
     }
 
-    DEBUG(DBG_BDPLUS, "VM config not found from  %s\n", dir);
+    BD_DEBUG(DBG_BDPLUS, "VM config not found from  %s\n", dir);
     free(dir);
     return NULL;
 }
@@ -110,6 +110,7 @@ char *file_get_config_dir(const char *file)
 {
     char *dir = NULL;
     const char *vm;
+    char *config_home;
     const char *base;
 
     vm = getenv("BDPLUS_VM_ID");
@@ -118,8 +119,9 @@ char *file_get_config_dir(const char *file)
     }
 
     /* try home directory */
-    base = file_get_config_home();
-    dir = _probe_config_dir(base, vm, file);
+    config_home = file_get_config_home();
+    dir = _probe_config_dir(config_home, vm, file);
+    X_FREE(config_home);
     if (dir) {
         return dir;
     }
@@ -147,7 +149,7 @@ static char *_load_fp(FILE *fp, uint32_t *p_size)
     fseek(fp, 0, SEEK_SET);
 
     if (file_size < MIN_FILE_SIZE || file_size > MAX_FILE_SIZE) {
-        DEBUG(DBG_FILE, "Invalid file size\n");
+        BD_DEBUG(DBG_FILE, "Invalid file size\n");
         return NULL;
     }
 
@@ -155,7 +157,7 @@ static char *_load_fp(FILE *fp, uint32_t *p_size)
     read_size = fread(data, 1, file_size, fp);
 
     if (read_size != file_size) {
-        DEBUG(DBG_FILE, "Error reading file\n");
+        BD_DEBUG(DBG_FILE, "Error reading file\n");
         free(data);
         return NULL;
     }
@@ -177,7 +179,7 @@ char *file_load(const char *path, uint32_t *p_size)
     fp = fopen(path, "rb");
 
     if (!fp) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Error loading %s\n", path);
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Error loading %s\n", path);
         return NULL;
     }
 

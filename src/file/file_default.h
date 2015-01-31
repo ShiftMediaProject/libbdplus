@@ -1,7 +1,6 @@
 /*
  * This file is part of libbdplus
- * Copyright (C) 2008-2010  Accident
- * Copyright (C) 2013       VideoLAN
+ * Copyright (C) 2015  VideoLAN
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,16 +17,13 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef LOADER_H_INCLUDED
-#define LOADER_H_INCLUDED
+#ifndef FILE_DEFAULT_H_
+#define FILE_DEFAULT_H_
+
+#include "filesystem.h"
 
 #include "util/attributes.h"
 
-#include <stdint.h>
+BD_PRIVATE BDPLUS_FILE_H *file_open_default(void *root_path, const char *file_name);
 
-struct VM_s;
-
-BD_PRIVATE int32_t  loader_load_svm ( struct VM_s *vm, const char *device_path, const char *fname,
-                                      int *pg_en, int *p_date);
-
-#endif
+#endif /* FILE_DEFAULT_H_ */

@@ -20,13 +20,14 @@
 
 #include "internal.h"
 #include "bdplus_data.h"
-
-#include "loader.h"
+#include "bdplus_config.h"
 
 #include "bdsvm/dlx.h"
 #include "bdsvm/event.h"
+#include "bdsvm/loader.h"
 #include "bdsvm/segment.h"
 
+#include "file/configfile.h"
 #include "file/file.h"
 #include "util/logging.h"
 #include "util/macro.h"
@@ -67,22 +68,30 @@ int crypto_init()
 
 char *bdplus_disc_cache_file(bdplus_t *plus, const char *file)
 {
-    const char *base = file_get_cache_dir();
+    char *base = file_get_cache_dir();
     char vid_str[33];
     char *result;
-    print_hex(vid_str, plus->volumeID, 16);
+    str_print_hex(vid_str, plus->volumeID, 16);
     result = str_printf("%s/%s/%s", base ? base : "/tmp/", vid_str, file);
+    X_FREE(base);
     file_mkpath(result);
     return result;
 }
 
 int32_t bdplus_load_svm(bdplus_t *plus, const char *fname)
 {
+    BDPLUS_FILE_H *fp;
+
     dlx_freeVM(&plus->vm);
     plus->vm = dlx_initVM(plus);
 
-    return loader_load_svm(plus->vm, plus->device_path, fname,
-                           &plus->gen, &plus->date);
+    fp = file_open(plus->config, fname);
+    if (!fp) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error opening %s\n", fname);
+        return -1;
+    }
+
+    return loader_load_svm(fp, fname, plus->vm, &plus->gen, &plus->date);
 }
 
 
@@ -98,7 +107,7 @@ int32_t bdplus_load_slots(bdplus_t *plus, const char *fname)
         p+=fread(&plus->slots[i], sizeof(plus->slots[i]), 1, fd);
     fclose(fd);
 
-    DEBUG(DBG_BDPLUS,"[bdplus] Loaded bdplus %p slots with '%s' %d : size %zd\n",
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] Loaded bdplus %p slots with '%s' %d : size %zd\n",
           plus, fname,p,
           sizeof(slot_t));
 
@@ -114,7 +123,7 @@ int32_t bdplus_save_slots(bdplus_t *plus, const char *fname)
 
     fd = fopen(fname, "wb");
     if (!fd) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "Error opening %s for writing\n", fname);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "Error opening %s for writing\n", fname);
         return errno;
     }
 
@@ -122,7 +131,7 @@ int32_t bdplus_save_slots(bdplus_t *plus, const char *fname)
         p+=fwrite(&plus->slots[i], sizeof(plus->slots[i]), 1, fd);
     fclose(fd);
 
-    DEBUG(DBG_BDPLUS,"[bdplus] Saved bdplus %p slots with '%s' %d : size %zd\n",
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] Saved bdplus %p slots with '%s' %d : size %zd\n",
           plus, fname,p,
           sizeof(slot_t));
 
@@ -137,7 +146,7 @@ int32_t bdplus_save_slots(bdplus_t *plus, const char *fname)
 // Use slot -1 to get the attached slot, if any.
 void bdplus_getSlot(bdplus_t *plus, uint32_t slot, slot_t *dst)
 {
-    DEBUG(DBG_BDPLUS,"[bdplus] getSlot(%d)\n", slot);
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] getSlot(%d)\n", slot);
 
     if (slot == 0xFFFFFFFF)
         slot = plus->attached_slot;
@@ -148,7 +157,7 @@ void bdplus_getSlot(bdplus_t *plus, uint32_t slot, slot_t *dst)
 
     //if (slot && (slot != vm->attached_slot)) {
     if ((slot != plus->attached_slot)) {
-        DEBUG(DBG_BDPLUS,"[bdplus] clearing authHash since it is not authorised\n");
+        BD_DEBUG(DBG_BDPLUS,"[bdplus] clearing authHash since it is not authorised\n");
         memset(&dst->authHash, 0, sizeof(dst->authHash));
     }
 }
@@ -156,7 +165,7 @@ void bdplus_getSlot(bdplus_t *plus, uint32_t slot, slot_t *dst)
 
 void bdplus_getAttachStatus(bdplus_t *plus, uint8_t *dst)
 {
-    DEBUG(DBG_BDPLUS,"[bdplus] attachedStatus %d %d %d\n",
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] attachedStatus %d %d %d\n",
            plus->attached_slot, plus->attachedStatus[0], plus->attachedStatus[1]);
     STORE4( dst   , plus->attached_slot);
     STORE4(&dst[4], (uint32_t)plus->attachedStatus[0]);
@@ -178,11 +187,11 @@ uint32_t bdplus_slot_authenticate(bdplus_t *plus, uint32_t slot, char *digest)
                 digest,
                 sizeof(plus->slots[ slot ].authHash))) {
         plus->attached_slot = slot;
-        DEBUG(DBG_BDPLUS,"[bdplus] slot %d authentication successful. \n", slot);
+        BD_DEBUG(DBG_BDPLUS,"[bdplus] slot %d authentication successful. \n", slot);
         return 1;
     }
 
-    DEBUG(DBG_BDPLUS,"[bdplus] slot %d authentication failed \n", slot);
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] slot %d authentication failed \n", slot);
 
     plus->attached_slot = 0;
 
@@ -222,7 +231,7 @@ uint32_t bdplus_new_slot(bdplus_t *plus)
 void bdplus_slot_write(bdplus_t *plus, slot_t *slot)
 {
 
-    DEBUG(DBG_BDPLUS,"[bdplus] dlx_slot_write: %d\n", plus->attached_slot);
+    BD_DEBUG(DBG_BDPLUS,"[bdplus] dlx_slot_write: %d\n", plus->attached_slot);
     memcpy(&plus->slots[ plus->attached_slot ], slot, sizeof(slot_t));
 }
 
@@ -245,7 +254,7 @@ struct bdplus_config_s *bdplus_getConfig(bdplus_t *plus)
 void bdplus_setConvTable(bdplus_t *plus, conv_table_t *conv_tab)
 {
     if (plus->conv_tab) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] set_convTable(): old table dropped !\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] set_convTable(): old table dropped !\n");
         segment_freeTable(&plus->conv_tab);
     }
     plus->conv_tab = conv_tab;
@@ -254,11 +263,6 @@ void bdplus_setConvTable(bdplus_t *plus, conv_table_t *conv_tab)
 conv_table_t *bdplus_getConvTable(bdplus_t *plus)
 {
     return plus->conv_tab;
-}
-
-const char *bdplus_getDevicePath(bdplus_t *plus)
-{
-    return plus->device_path;
 }
 
 
@@ -274,7 +278,7 @@ int32_t bdplus_run_convtab(bdplus_t *plus, uint32_t num_titles)
     uint32_t current_break = 0;
     VM *vm = plus->vm;
 
-    DEBUG(DBG_BDPLUS,"RUNNING VM FOR CONV_TABLE...\n");
+    BD_DEBUG(DBG_BDPLUS,"RUNNING VM FOR CONV_TABLE...\n");
 
     // Start event processing
     bdplus_send_event(vm, EVENT_Start, 0x00000000, 0x00000000,0 );
@@ -285,7 +289,7 @@ int32_t bdplus_run_convtab(bdplus_t *plus, uint32_t num_titles)
         ret = dlx_run(vm, BD_STEP_TRAP);
 
         if (ret < 0) {
-            DEBUG(DBG_BDPLUS | DBG_CRIT, "run_convtab(): DLX execution error\n");
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "run_convtab(): DLX execution error\n");
             break; // DLX execution error.
         }
 
@@ -293,7 +297,7 @@ int32_t bdplus_run_convtab(bdplus_t *plus, uint32_t num_titles)
         if (ret == 2) {
             // BREAK
 #if 0
-            DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
                    dlx_getPC(vm)-4, dlx_getWD(vm));
 #endif
 
@@ -387,7 +391,7 @@ int32_t bdplus_run_convtab(bdplus_t *plus, uint32_t num_titles)
 
     } // while bdplus_run
 
-    DEBUG(DBG_BDPLUS | DBG_CRIT,"CONV_TABLE %p: numTables %u\n",
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"CONV_TABLE %p: numTables %u\n",
           plus->conv_tab,
           segment_numTables(plus->conv_tab));
 
@@ -407,7 +411,7 @@ int32_t bdplus_run_idle(VM *vm)
     int32_t keep_running, ret;
     uint32_t current_break = 0;
 
-    DEBUG(DBG_BDPLUS, "RUNNING VM (IDLE)...\n");
+    BD_DEBUG(DBG_BDPLUS, "RUNNING VM (IDLE)...\n");
 
     keep_running = 1;
     while (keep_running) {
@@ -419,7 +423,7 @@ int32_t bdplus_run_idle(VM *vm)
         // deal with breaks
         if (ret == 2) {
             // BREAK
-            DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
                    dlx_getPC(vm)-4, dlx_getWD(vm));
 
             current_break++;
@@ -447,7 +451,7 @@ int32_t bdplus_run_idle(VM *vm)
 
 int32_t bdplus_run_init(VM *vm)
 {
-    DEBUG(DBG_BDPLUS, "RUNNING VM (INIT)...\n");
+    BD_DEBUG(DBG_BDPLUS, "RUNNING VM (INIT)...\n");
 
     if (!vm) return 0;
 
@@ -462,7 +466,7 @@ int32_t bdplus_run_shutdown(bdplus_t *plus)
 {
     int32_t result;
 
-    DEBUG(DBG_BDPLUS, "RUNNING VM (SHUTDOWN)...\n");
+    BD_DEBUG(DBG_BDPLUS, "RUNNING VM (SHUTDOWN)...\n");
 
     if (!plus || !plus->vm) return 0;
 
@@ -499,11 +503,11 @@ int32_t bdplus_run_m2ts(bdplus_t *plus, uint32_t m2ts)
     /* empty table ? */
     int entries = segment_numEntries(plus->conv_tab);
     if (entries < 1) {
-        DEBUG(DBG_BDPLUS, "conversion table is empty\n");
+        BD_DEBUG(DBG_BDPLUS, "conversion table is empty\n");
         return 1;
     }
 
-    DEBUG(DBG_BDPLUS, "RUNNING VM TO DECRYPT %05u.m2ts\n", m2ts);
+    BD_DEBUG(DBG_BDPLUS, "RUNNING VM TO DECRYPT %05u.m2ts\n", m2ts);
 
     vm = plus->vm;
     keep_running = 1;
@@ -516,7 +520,7 @@ int32_t bdplus_run_m2ts(bdplus_t *plus, uint32_t m2ts)
         // deal with breaks
         if (ret == 2) {
             // BREAK
-            DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
                    dlx_getPC(vm)-4, dlx_getWD(vm));
 
             current_break++;
@@ -537,18 +541,18 @@ int32_t bdplus_run_m2ts(bdplus_t *plus, uint32_t m2ts)
                     if (!segment_nextSegment(plus->conv_tab,
                                              &table,
                                              &segment)) {
-                        DEBUG(DBG_BDPLUS, "[bdplus] finished all segment keys for %05u.m2ts\n", m2ts);
+                        BD_DEBUG(DBG_BDPLUS, "[bdplus] finished all segment keys for %05u.m2ts\n", m2ts);
                         keep_running = 0;
                         break; // Looped.
                     }
 
                     if (table != m2ts) {
-                        DEBUG(DBG_BDPLUS, "[bdplus] different title\n");
+                        BD_DEBUG(DBG_BDPLUS, "[bdplus] different title\n");
                         keep_running = 0;
                         break;
                     }
 
-                    DEBUG(DBG_BDPLUS, "[bdplus] posting event for segment keys %d/%d\n", table, segment);
+                    BD_DEBUG(DBG_BDPLUS, "[bdplus] posting event for segment keys %d/%d\n", table, segment);
 
                     bdplus_send_event(vm, EVENT_ComputeSP,
                                       0x00000000, table, segment);
@@ -581,7 +585,7 @@ int32_t bdplus_run_title(bdplus_t *plus, uint32_t title)
 
     if (!plus || !plus->vm) return 0;
 
-    DEBUG(DBG_BDPLUS, "RUNNING VM (TITLE)...\n");
+    BD_DEBUG(DBG_BDPLUS, "RUNNING VM (TITLE)...\n");
 
     vm = plus->vm;
     keep_running = 1;
@@ -594,7 +598,7 @@ int32_t bdplus_run_title(bdplus_t *plus, uint32_t title)
         // deal with breaks
         if (ret == 2) {
             // BREAK
-            DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[bdplus] break reached, PC=%08X: WD=%08X\n",
                    dlx_getPC(vm)-4, dlx_getWD(vm));
 
             current_break++;
@@ -624,7 +628,7 @@ int32_t bdplus_run_title(bdplus_t *plus, uint32_t title)
 
     } // while bdplus_run
 
-    DEBUG(DBG_BDPLUS, "CONV_TABLE %p: numTables %u\n",
+    BD_DEBUG(DBG_BDPLUS, "CONV_TABLE %p: numTables %u\n",
           plus->conv_tab,
           segment_numTables(plus->conv_tab));
 
@@ -639,7 +643,7 @@ int32_t bdplus_run_event210(VM *vm, uint32_t param)
 {
     if (!vm) return 0;
 
-    DEBUG(DBG_BDPLUS,"RUNNING VM PSR CHANGE %u\n", param);
+    BD_DEBUG(DBG_BDPLUS,"RUNNING VM PSR CHANGE %u\n", param);
 
     bdplus_send_event(vm, EVENT_ApplicationLayer,
                       0,1,0);//0,0,param);//param, param&0xffff,0 );

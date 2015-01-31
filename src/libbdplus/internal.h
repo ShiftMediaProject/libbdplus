@@ -42,7 +42,6 @@ BD_PRIVATE uint8_t                *bdplus_getMediaKey( bdplus_t *plus );
 BD_PRIVATE void                    bdplus_setConvTable( bdplus_t *plus, struct conv_table_s * );
 BD_PRIVATE struct conv_table_s    *bdplus_getConvTable ( bdplus_t *plus );
 BD_PRIVATE struct bdplus_config_s *bdplus_getConfig    ( bdplus_t *plus );
-BD_PRIVATE const char             *bdplus_getDevicePath( bdplus_t *plus );
 BD_PRIVATE char                   *bdplus_disc_cache_file( bdplus_t *plus, const char *file );
 
 BD_PRIVATE void     bdplus_getSlot           ( bdplus_t *plus, uint32_t slot, struct slot_s *dst );

@@ -1,7 +1,7 @@
 dnl library version number
 m4_define([bdplus_major], 0)
 m4_define([bdplus_minor], 1)
-m4_define([bdplus_micro], 1)
+m4_define([bdplus_micro], 2)
 m4_define([bdplus_version],[bdplus_major.bdplus_minor.bdplus_micro])
 
 dnl library (.so) version
@@ -14,17 +14,20 @@ dnl - If ABI is broken, increase current and set age and revision to 0.
 #
 dnl Library file name will be libbdplus.(current-age).age.revision
 #
-m4_define([lt_current],  0)
-m4_define([lt_age],      0)
-m4_define([lt_revision], 1)
+m4_define([lt_current],  1)
+m4_define([lt_age],      1)
+m4_define([lt_revision], 0)
 
 dnl initilization
 AC_INIT([libbdplus], bdplus_version, [http://www.videolan.org/developers/libbdplus.html])
 AC_CONFIG_AUX_DIR([build-aux])
 AC_CONFIG_MACRO_DIR([m4])
 AC_CANONICAL_SYSTEM
-AM_INIT_AUTOMAKE([foreign dist-bzip2 no-dist-gzip])
+AM_INIT_AUTOMAKE([foreign tar-ustar dist-bzip2 no-dist-gzip subdir-objects])
 AC_CONFIG_HEADERS(config.h)
+
+dnl Enable silent rules only when available (automake 1.11 or later).
+m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 SET_FEATURES="-D_ISOC99_SOURCE -D_POSIX_C_SOURCE=200112L"
 
@@ -197,5 +200,5 @@ AC_SUBST(LT_VERSION_INFO)
 
 dnl generate output files
 AC_SUBST(SET_FEATURES)
-AC_CONFIG_FILES([Makefile src/Makefile src/libbdplus.pc src/libbdplus/bdplus-version.h])
+AC_CONFIG_FILES([Makefile src/libbdplus.pc src/libbdplus/bdplus-version.h])
 AC_OUTPUT

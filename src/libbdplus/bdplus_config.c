@@ -23,7 +23,7 @@
 
 #include "bdplus_config.h"
 
-#include "file/file.h"
+#include "file/configfile.h"
 #include "util/logging.h"
 #include "util/strutl.h"
 #include "util/macro.h"
@@ -53,7 +53,7 @@ static int _load_aes_keys(bdplus_aes_key_t *aes_keys, const char *base)
         num_keys = MAX_AES_KEYS;
     }
     if (num_keys * 16 != size) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Invalid AES key file size\n");
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Invalid AES key file size\n");
     }
 
     for (ii = 0; ii < num_keys; ii++) {
@@ -85,7 +85,7 @@ static int _load_ecdsa_keys(bdplus_ecdsa_key_t *ecdsa_keys, const char *base)
         }
         else if (3 == sscanf(p, "%40s %40s %40s", key_d, key_Qx, key_Qy)) {
             if (num_ecdsa_keys >= MAX_ECDSA_KEYS) {
-                DEBUG(DBG_FILE | DBG_CRIT, "Too many ECDSA keys\n");
+                BD_DEBUG(DBG_FILE | DBG_CRIT, "Too many ECDSA keys\n");
                 break;
             }
             memcpy(ecdsa_keys[num_ecdsa_keys].d,  key_d, 40);
@@ -94,7 +94,7 @@ static int _load_ecdsa_keys(bdplus_ecdsa_key_t *ecdsa_keys, const char *base)
             num_ecdsa_keys++;
         }
         else {
-            DEBUG(DBG_FILE | DBG_CRIT, "invalid line in config file: %4.4s...\n", p);
+            BD_DEBUG(DBG_FILE | DBG_CRIT, "invalid line in config file: %4.4s...\n", p);
         }
         p = str_next_line(p);
     }
@@ -119,11 +119,11 @@ static int _load_ram(bdplus_ram_t **p, const char *base, uint32_t address, const
 
     if (!strcmp(file, "PSR")) {
         ram->area[ram->num_area].type = MEM_TYPE_PSR;
-        DEBUG(DBG_BDPLUS, "mapped PSR register file to 0x%x\n", address);
+        BD_DEBUG(DBG_BDPLUS, "mapped PSR register file to 0x%x\n", address);
 
     } else if (!strcmp(file, "GPR")) {
         ram->area[ram->num_area].type = MEM_TYPE_PSR;
-        DEBUG(DBG_BDPLUS, "mapped GPR register file to 0x%x\n", address);
+        BD_DEBUG(DBG_BDPLUS, "mapped GPR register file to 0x%x\n", address);
 
     } else {
         /* load from file */
@@ -138,7 +138,7 @@ static int _load_ram(bdplus_ram_t **p, const char *base, uint32_t address, const
             return 0;
         }
 
-        DEBUG(DBG_BDPLUS, "mapped %d bytes from %s to 0x%x\n",
+        BD_DEBUG(DBG_BDPLUS, "mapped %d bytes from %s to 0x%x\n",
               ram->area[ram->num_area].size, file, address);
     }
 
@@ -199,7 +199,7 @@ static int _load_memory(bdplus_ram_t **ram, const char *base)
     X_FREE(path);
 
     if (!cfg) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Error loading memory map file '"MEMORY_MAP_FILE"'\n");
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Error loading memory map file '"MEMORY_MAP_FILE"'\n");
         return -1;
     }
 
@@ -220,7 +220,7 @@ static int _load_memory(bdplus_ram_t **ram, const char *base)
             _load_ram(ram, base, address, name);
         }
         else {
-            DEBUG(DBG_FILE | DBG_CRIT, "invalid line in config file: %4.4s...\n", p);
+            BD_DEBUG(DBG_FILE | DBG_CRIT, "invalid line in config file: %4.4s...\n", p);
         }
         p = str_next_line(p);
     }
@@ -252,7 +252,7 @@ int bdplus_config_load(const char *config_path,
         base = file_get_config_dir(MEMORY_MAP_FILE);
         config_path = base;
         if (!base) {
-            DEBUG(DBG_FILE | DBG_CRIT, "VM configuration not found\n");
+            BD_DEBUG(DBG_FILE | DBG_CRIT, "VM configuration not found\n");
             return -1;
         }
     }
@@ -263,16 +263,16 @@ int bdplus_config_load(const char *config_path,
 
     config->num_aes_keys = _load_aes_keys(config->aes_keys, config_path);
     if (config->num_aes_keys < 0) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Player AES keys not found\n");
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Player AES keys not found\n");
     }
     if (_load_ecdsa_keys(config->ecdsa_keys, config_path) < 0) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Player ECDSA keys not found\n");
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Player ECDSA keys not found\n");
     }
     if (_load_dev_discovery(config->dev, config_path) < 0) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Player device discovery signatures not found\n");
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Player device discovery signatures not found\n");
     }
     if (_load_memory(&config->ram, config_path) < 0) {
-        DEBUG(DBG_FILE | DBG_CRIT, "Player memory loading failed\n");
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Player memory loading failed\n");
     }
 
     X_FREE(base);
@@ -298,18 +298,18 @@ void bdplus_config_mmap(bdplus_ram_t *ram, uint32_t type, void *mem, uint32_t si
     bdplus_ram_area_t *p;
 
     if (!mem) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: config not read\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: config not read\n");
         return;
     }
 
     if (((intptr_t)mem) & 3) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: register file %d not aligned\n", type);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: register file %d not aligned\n", type);
         return;
     }
 
     p = _find_mem(ram, type);
     if (!p) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: register file %d not mapped in config\n", type);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: register file %d not mapped in config\n", type);
         return;
     }
 

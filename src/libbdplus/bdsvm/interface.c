@@ -56,7 +56,7 @@ void interface_trap(VM *vm, uint32_t trap)
 
     if (!plus || !vm->addr) return; // assert?
 
-    DEBUG(DBG_BDPLUS,"[interface] ** #%06u TRAP %08x (%d) return PC=%08X: event %d (current %04x)\n", vm->num_traps, trap, trap, vm->PC-4, vm->event_processing, vm->event_current);
+    BD_DEBUG(DBG_BDPLUS,"[interface] ** #%06u TRAP %08x (%d) return PC=%08X: event %d (current %04x)\n", vm->num_traps, trap, trap, vm->PC-4, vm->event_processing, vm->event_current);
 
     SP = &vm->addr[ vm->R[29] & ADDR_MASK4 ];
 
@@ -71,18 +71,18 @@ void interface_trap(VM *vm, uint32_t trap)
         // Finished called, WD=0x4000 to sit in idle-loop
         //dlx_setPC(vm, vm->R[28]);
 #if 1
-        DEBUG(DBG_BDPLUS,"[interface] trap_Finished. PC=%08X R28=%08X: EVENT %04X\n",
+        BD_DEBUG(DBG_BDPLUS,"[interface] trap_Finished. PC=%08X R28=%08X: EVENT %04X\n",
               vm->PC, vm->R[28],
               vm->event_current);
 #else
-        DEBUG(DBG_DLX,"[interface] trap_Finished. PC=%08X R28=%08X:", vm->PC, vm->R[28]);
+        BD_DEBUG(DBG_DLX,"[interface] trap_Finished. PC=%08X R28=%08X:", vm->PC, vm->R[28]);
         for (result = 0; result < 16; result++)
-            DEBUG(DBG_DLX,"%02X ", vm->addr[result]);
+            BD_DEBUG(DBG_DLX,"%02X ", vm->addr[result]);
 
-        DEBUG(DBG_DLX,"\n");
+        BD_DEBUG(DBG_DLX,"\n");
         for (result = 0; result < 16; result++)
-            DEBUG(DBG_DLX,"%02X ", vm->addr[0x10+result]);
-        DEBUG(DBG_DLX,"\n");
+            BD_DEBUG(DBG_DLX,"%02X ", vm->addr[0x10+result]);
+        BD_DEBUG(DBG_DLX,"\n");
 #endif
 
         // If Finished is in reply to ComputeSP, we received a new
@@ -121,7 +121,7 @@ void interface_trap(VM *vm, uint32_t trap)
         len = FETCH4( SP   );
         src = FETCH4( SP+4 );
 
-        DEBUG(DBG_BDPLUS,"[interface] trap_ConversionTable(%08X, *%08X)\n",  len, src);
+        BD_DEBUG(DBG_BDPLUS,"[interface] trap_ConversionTable(%08X, *%08X)\n",  len, src);
 
         if ( VALIDATE_ADDRESS_ALIGN(src, len) )
             result = STATUS_INVALID_PARAMETER;
@@ -160,17 +160,17 @@ void interface_trap(VM *vm, uint32_t trap)
         len = FETCH4( SP+8 );
         key = FETCH4( SP+12);
 
-        DEBUG(DBG_BDPLUS,"[interface] Aes(*%08X, *%08X, %08X, *%08X, %08X\n", dst, src, len, key, FETCH4(SP+16));
+        BD_DEBUG(DBG_BDPLUS,"[interface] Aes(*%08X, *%08X, %08X, *%08X, %08X\n", dst, src, len, key, FETCH4(SP+16));
 
         // Check the event-id.
         // This trap will fail if we are not in processing mode.
 
-        DEBUG(DBG_BDPLUS,"[interface] TRAP_Aes: processing %d and event %08X\n", vm->event_processing, vm->event_current);
+        BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_Aes: processing %d and event %08X\n", vm->event_processing, vm->event_current);
 
         if ((vm->event_current != 0x0000) &&
             (vm->event_current != 0x0010) &&
             (vm->event_current != 0x0110)) {
-            DEBUG(DBG_BDPLUS,"[interface] TRAP_Aes refused due to event-ID %08X\n", vm->event_current);
+            BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_Aes refused due to event-ID %08X\n", vm->event_current);
             result = STATUS_INTERNAL_ERROR;
         } else
             //        if (vm->num_traps == 10179) {
@@ -205,14 +205,14 @@ void interface_trap(VM *vm, uint32_t trap)
         src = FETCH4( SP+8 );
         len = FETCH4( SP+12 );
 
-        DEBUG(DBG_BDPLUS,"[interface] PrivateKey(%08X, *%08X, *%08X, %08X, %08X)\n",
+        BD_DEBUG(DBG_BDPLUS,"[interface] PrivateKey(%08X, *%08X, *%08X, %08X, %08X)\n",
                FETCH4( SP   ), dst, src, len, FETCH4( SP+16));
 
         // Check the event-id.
         if ((vm->event_current != 0x0000) &&
             (vm->event_current != 0x0010) &&
             (vm->event_current != 0x0110)) {
-            DEBUG(DBG_BDPLUS,"[interface] TRAP_PrivateKey refused due to event-ID %08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_PrivateKey refused due to event-ID %08X\n",
                    vm->event_current);
             result = STATUS_INTERNAL_ERROR;
         } else
@@ -246,7 +246,7 @@ void interface_trap(VM *vm, uint32_t trap)
     case 0x130: // TRAP_Random
         dst = FETCH4( SP   );
         len = FETCH4( SP+4 );
-        DEBUG(DBG_BDPLUS,"[interface] TRAP_Random(%08X, %08X)\n", dst, len);
+        BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_Random(%08X, %08X)\n", dst, len);
         if (
             VALIDATE_ADDRESS(dst, len)
             )
@@ -275,7 +275,7 @@ void interface_trap(VM *vm, uint32_t trap)
         src = FETCH4( SP+4 );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] Sha1(%08X, %08X, %08X, %08X\n", dst, src, len, FETCH4( SP+12));
+        BD_DEBUG(DBG_BDPLUS,"[interface] Sha1(%08X, %08X, %08X, %08X\n", dst, src, len, FETCH4( SP+12));
 
         if (
             VALIDATE_ADDRESS(src, len) ||
@@ -302,7 +302,7 @@ void interface_trap(VM *vm, uint32_t trap)
         src = FETCH4( SP+4 );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] AddWithCarry(%08X, %08X, %08X)\n", dst, src, len);
+        BD_DEBUG(DBG_BDPLUS,"[interface] AddWithCarry(%08X, %08X, %08X)\n", dst, src, len);
 
         if (
             VALIDATE_ADDRESS_ALIGN(dst, 4 * len) ||
@@ -330,7 +330,7 @@ void interface_trap(VM *vm, uint32_t trap)
         src = FETCH4( SP+4 );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] MultiplyWithCarry(*%08X, *%08X, %08X, %08X)\n", dst, src, len, FETCH4(SP+12));
+        BD_DEBUG(DBG_BDPLUS,"[interface] MultiplyWithCarry(*%08X, *%08X, %08X, %08X)\n", dst, src, len, FETCH4(SP+12));
 
         if (
             VALIDATE_ADDRESS_ALIGN(dst, 4 * len + 4) ||
@@ -357,7 +357,7 @@ void interface_trap(VM *vm, uint32_t trap)
         src = FETCH4( SP+4 );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] XorBlock(%08X, %08X, %08X)\n", dst, src, len);
+        BD_DEBUG(DBG_BDPLUS,"[interface] XorBlock(%08X, %08X, %08X)\n", dst, src, len);
 
         if (
             VALIDATE_ADDRESS_ALIGN(dst, 4 * len) ||
@@ -382,7 +382,7 @@ void interface_trap(VM *vm, uint32_t trap)
         src = FETCH4( SP+4 );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] Memmove(%08X, %08X, %08X)\n", dst, src, len);
+        BD_DEBUG(DBG_BDPLUS,"[interface] Memmove(%08X, %08X, %08X)\n", dst, src, len);
 
         if (
             VALIDATE_ADDRESS(dst, len) ||
@@ -413,7 +413,7 @@ void interface_trap(VM *vm, uint32_t trap)
         SearchDataLen = FETCH4( SP+12 );
         dst           = FETCH4( SP+16 );
 
-        DEBUG(DBG_BDPLUS,"[interface] MemSearch(*%08X, %08X, *%08X, %08X, %08X\n", Region, RegionLen, SearchData, SearchDataLen, dst);
+        BD_DEBUG(DBG_BDPLUS,"[interface] MemSearch(*%08X, %08X, *%08X, %08X, %08X\n", Region, RegionLen, SearchData, SearchDataLen, dst);
         // Set fsize to Region start, then trap_MemSearch will +i the location
         // of found string. Or set it to 00 as needed.
         fsize = Region;
@@ -434,7 +434,7 @@ void interface_trap(VM *vm, uint32_t trap)
                                );
         // fsize has VM memory address, so translate to virtual address
         if (result == STATUS_OK) {
-            DEBUG(DBG_BDPLUS,"[interface] MemSearch: storing %08X in *dst\n", fsize);
+            BD_DEBUG(DBG_BDPLUS,"[interface] MemSearch: storing %08X in *dst\n", fsize);
             STORE4(&vm->addr[dst & ADDR_MASK4],fsize);
         }
         break;
@@ -445,7 +445,7 @@ void interface_trap(VM *vm, uint32_t trap)
         dst = FETCH4( SP   );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] Memset(%08X, %08X)\n", dst, len);
+        BD_DEBUG(DBG_BDPLUS,"[interface] Memset(%08X, %08X)\n", dst, len);
         if (
             VALIDATE_ADDRESS(dst, len)
             )
@@ -472,7 +472,7 @@ void interface_trap(VM *vm, uint32_t trap)
         PC = vm->PC - 4;
         len = FETCH4( SP+4 );
 
-        DEBUG(DBG_BDPLUS,"[interface] SlotAttach(%08X, %u, %08X, %08X)\n", FETCH4( SP   ), len, vm->code_start, PC);
+        BD_DEBUG(DBG_BDPLUS,"[interface] SlotAttach(%08X, %u, %08X, %08X)\n", FETCH4( SP   ), len, vm->code_start, PC);
 
         // [interface] SlotAttach(00000000, 20, 00001000, 00026244) :800001
 
@@ -497,7 +497,7 @@ void interface_trap(VM *vm, uint32_t trap)
         // snapshots.
         dst  = FETCH4( SP   );
         slot = FETCH4( SP+4 );
-        DEBUG(DBG_BDPLUS,"[interface] SlotRead(%08X, %d)\n", dst,
+        BD_DEBUG(DBG_BDPLUS,"[interface] SlotRead(%08X, %d)\n", dst,
                slot );
 
         if (slot == 0xFFFFFFFF)
@@ -548,13 +548,13 @@ void interface_trap(VM *vm, uint32_t trap)
     case 0x510:
         src  = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] ApplicationLayer(%08X, %08X, *%08X)\n",
+        BD_DEBUG(DBG_BDPLUS,"[interface] ApplicationLayer(%08X, %08X, *%08X)\n",
                FETCH4( SP   ), FETCH4( SP+4 ), src);
 
         if ((vm->event_current == 0x0000) ||
             (vm->event_current == 0x0010) ||
             (vm->event_current == 0x0110)) {
-            DEBUG(DBG_BDPLUS,"[interface] TRAP_ApplicationLayer refused due to event-ID %08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_ApplicationLayer refused due to event-ID %08X\n",
                    vm->event_current);
             result = STATUS_INTERNAL_ERROR;
         } else
@@ -591,7 +591,7 @@ void interface_trap(VM *vm, uint32_t trap)
         fsize = FETCH4(&vm->addr[ len & ADDR_MASK4 ] );
         dst   =  FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] Discovery: %08X, %08X, %08X, %d\n",
+        BD_DEBUG(DBG_BDPLUS,"[interface] Discovery: %08X, %08X, %08X, %d\n",
                FETCH4( SP   ),  FETCH4( SP +4  ), dst, fsize);
 
         // [interface] Discovery: 00000001, 00000003, 0002EC68, 60
@@ -660,7 +660,7 @@ void interface_trap(VM *vm, uint32_t trap)
         dst = FETCH4( SP+4 );
         len = FETCH4( SP+8 );
 
-        DEBUG(DBG_BDPLUS,"[interface] DiscoveryRAM(*%08x, *%08X, %08X)\n", src, dst, len);
+        BD_DEBUG(DBG_BDPLUS,"[interface] DiscoveryRAM(*%08x, *%08X, %08X)\n", src, dst, len);
         //[interface] DiscoveryRAM(001a94f0, 003DFCA0, 33C1CBF6)
         //[interface] DiscoveryRAM(001a94f0, 003DFCA0, 33C1CBF6)
 
@@ -702,21 +702,21 @@ void interface_trap(VM *vm, uint32_t trap)
             poo  = bdplus_VM_new(DLX_MEMORY_SIZE);
             snprintf(buffer, sizeof(buffer), "post_trap_snapshots/post_trap_mem_%06u.bin", vm->num_traps);
 
-            DEBUG(DBG_BDPLUS,"[bdtest] fudging with '%s'\n", buffer);
+            BD_DEBUG(DBG_BDPLUS,"[bdtest] fudging with '%s'\n", buffer);
 
             dlx_loadcore(poo, 0x0, buffer, 0 /*DLX_LOAD_SWAP*/);
 
-            DEBUG(DBG_BDPLUS,"Mine: ");
+            BD_DEBUG(DBG_BDPLUS,"Mine: ");
             for (i = 0; i < len; i++) {
-                if (!(i % 16)) DEBUG(DBG_BDPLUS,"\n");
-                DEBUG(DBG_BDPLUS,"%02X ", vm->addr[ (dst & ADDR_MASK1) + i ]);
+                if (!(i % 16)) BD_DEBUG(DBG_BDPLUS,"\n");
+                BD_DEBUG(DBG_BDPLUS,"%02X ", vm->addr[ (dst & ADDR_MASK1) + i ]);
             }
-            DEBUG(DBG_BDPLUS,"\nTheirs: ");
+            BD_DEBUG(DBG_BDPLUS,"\nTheirs: ");
             for (i = 0; i < len; i++) {
-                if (!(i % 16)) DEBUG(DBG_BDPLUS,"\n");
-                DEBUG(DBG_BDPLUS,"%02X ", poo->addr[ (dst & ADDR_MASK1) + i ]);
+                if (!(i % 16)) BD_DEBUG(DBG_BDPLUS,"\n");
+                BD_DEBUG(DBG_BDPLUS,"%02X ", poo->addr[ (dst & ADDR_MASK1) + i ]);
             }
-            DEBUG(DBG_BDPLUS,"\nReturn\n");
+            BD_DEBUG(DBG_BDPLUS,"\nReturn\n");
 
             memcpy(&vm->addr[ dst & ADDR_MASK1 ],
                    &poo->addr[ dst & ADDR_MASK1 ],
@@ -734,19 +734,19 @@ void interface_trap(VM *vm, uint32_t trap)
         len       = FETCH4( SP+12  );
         fsize     = FETCH4(&vm->addr[ len & ADDR_MASK4 ] );
 
-        DEBUG(DBG_BDPLUS,"[interface] LoadContentCode(%08X-%08X): %d\n", FETCH4( SP+16 ), FETCH4( SP+16 ) + fsize, fsize);
-        DEBUG(DBG_BDPLUS,"[interface] vm translated memory (%p-%p): %d\n", &vm->addr[FETCH4( SP+16 )], &vm->addr[FETCH4( SP+16 ) + fsize],
+        BD_DEBUG(DBG_BDPLUS,"[interface] LoadContentCode(%08X-%08X): %d\n", FETCH4( SP+16 ), FETCH4( SP+16 ) + fsize, fsize);
+        BD_DEBUG(DBG_BDPLUS,"[interface] vm translated memory (%p-%p): %d\n", &vm->addr[FETCH4( SP+16 )], &vm->addr[FETCH4( SP+16 ) + fsize],
                fsize);
 
         if (FETCH4( SP+16 ) + fsize >= vm->size)
-            DEBUG(DBG_BDPLUS,"[interface] Warning, load would wrap memory\n");
+            BD_DEBUG(DBG_BDPLUS,"[interface] Warning, load would wrap memory\n");
 
 
         // Why is "dst" not checked?
         if ((vm->event_current != 0x0000) &&
             (vm->event_current != 0x0010) &&
             (vm->event_current != 0x0110)) {
-            DEBUG(DBG_BDPLUS,"[interface] TRAP_LoadContentCode refused due to event-ID %08X\n",  vm->event_current);
+            BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_LoadContentCode refused due to event-ID %08X\n",  vm->event_current);
             result = STATUS_INTERNAL_ERROR;
         } else
         if (
@@ -757,7 +757,7 @@ void interface_trap(VM *vm, uint32_t trap)
         else {
             result =
                 TRAP_LoadContentCode(
-                                     bdplus_getDevicePath(plus),
+                                     bdplus_getConfig(plus),
                                      &vm->addr[ src & ADDR_MASK1 ],// ContentCode
                                      FETCH4( SP+4  ),  // block
                                      FETCH4( SP+8  ),  // offset
@@ -779,7 +779,7 @@ void interface_trap(VM *vm, uint32_t trap)
         dst       = FETCH4( SP+20 );
         fsize     = FETCH4(&vm->addr[ len & ADDR_MASK4 ] );
 
-        DEBUG(DBG_BDPLUS,"TRAP_MediaCheck(%08X, %u, %u, %08X, %08X)\n",
+        BD_DEBUG(DBG_BDPLUS,"TRAP_MediaCheck(%08X, %u, %u, %08X, %08X)\n",
                src,  // fname
                fname_len,
                fsize,                        // *len
@@ -787,7 +787,7 @@ void interface_trap(VM *vm, uint32_t trap)
                len
                );
         if ((vm->event_current != 0x0000)) {
-            DEBUG(DBG_BDPLUS,"[interface] TRAP_MediaCheck refused due to event-ID %08X\n",
+            BD_DEBUG(DBG_BDPLUS,"[interface] TRAP_MediaCheck refused due to event-ID %08X\n",
                    vm->event_current);
             result = STATUS_INTERNAL_ERROR;
         } else
@@ -811,7 +811,7 @@ void interface_trap(VM *vm, uint32_t trap)
         else {
             result =
                 TRAP_MediaCheck(
-                                bdplus_getDevicePath(plus),
+                                bdplus_getConfig(plus),
                                 &vm->addr[ src & ADDR_MASK1 ],// fname
                                 fname_len,
                                 FETCH4( SP+8  ),               // OffsHigh
@@ -823,7 +823,7 @@ void interface_trap(VM *vm, uint32_t trap)
 
 
         if (result == STATUS_OK) {
-            DEBUG(DBG_BDPLUS,"Storing %08X at %08X\n", fsize, len);
+            BD_DEBUG(DBG_BDPLUS,"Storing %08X at %08X\n", fsize, len);
             STORE4(&vm->addr[ len & ADDR_MASK4],fsize);
         }
         break;
@@ -844,11 +844,11 @@ void interface_trap(VM *vm, uint32_t trap)
         break;
 
     default:
-        DEBUG(DBG_BDPLUS, "[interface] unknown trap %08X:%d.\n", trap, trap);
+        BD_DEBUG(DBG_BDPLUS, "[interface] unknown trap %08X:%d.\n", trap, trap);
         result = STATUS_NOT_SUPPORTED;
     }
 
-    DEBUG(DBG_BDPLUS,"[interface] TRAP return: R1 = %08X\n", result);
+    BD_DEBUG(DBG_BDPLUS,"[interface] TRAP return: R1 = %08X\n", result);
     vm->R[1] = result;
 
     // Decrease WD if not in event_processing
@@ -858,7 +858,7 @@ void interface_trap(VM *vm, uint32_t trap)
 
         tWD = dlx_getWD(vm);
 
-        DEBUG(DBG_BDPLUS,"[interface] I want to decrease %08X by 0x140 to %08X (result %08X, processing %u, event %08X)\n",
+        BD_DEBUG(DBG_BDPLUS,"[interface] I want to decrease %08X by 0x140 to %08X (result %08X, processing %u, event %08X)\n",
                tWD, tWD - 0x140,
                result, vm->event_processing, vm->event_current);
 #if 1

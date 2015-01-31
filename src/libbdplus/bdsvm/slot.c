@@ -65,7 +65,7 @@ uint32_t slot_SlotAttach(VM *vm,
     uint8_t *hash = NULL;
     uint8_t digest1[SHA_DIGEST_LENGTH], digest2[SHA_DIGEST_LENGTH];
 
-    DEBUG(DBG_BDPLUS,"[slot] trap_SlotAttach(%d)\n", slot);
+    BD_DEBUG(DBG_BDPLUS,"[slot] trap_SlotAttach(%d)\n", slot);
 
     PC = dlx_getPC(vm) - 4; // Pull back 4
     IF = dlx_getIF(vm);
@@ -114,7 +114,7 @@ uint32_t slot_SlotRead(VM *vm,
                        uint8_t *dst, uint32_t slot)
 {
 
-    DEBUG(DBG_BDPLUS,"[slot] trap_SlotRead(%d)\n", slot);
+    BD_DEBUG(DBG_BDPLUS,"[slot] trap_SlotRead(%d)\n", slot);
 
     if (slot == 0xFFFFFFFF) { // Status?
 
@@ -126,7 +126,7 @@ uint32_t slot_SlotRead(VM *vm,
     if ( slot >= BDPLUS_NUM_SLOTS )
         return STATUS_INVALID_PARAMETER;
 
-    DEBUG(DBG_BDPLUS,"[slot] shoving slot %d to memory %p\n", slot, dst);
+    BD_DEBUG(DBG_BDPLUS,"[slot] shoving slot %d to memory %p\n", slot, dst);
 
     bdplus_getSlot(dlx_getApp(vm), slot, (slot_t *)dst);
 
@@ -141,7 +141,7 @@ uint32_t slot_SlotWrite(VM *vm,
     uint32_t counter;
     slot_t *newContents = (slot_t *)src;
 
-    DEBUG(DBG_BDPLUS,"[slot] trap_SlotWrite()\n");
+    BD_DEBUG(DBG_BDPLUS,"[slot] trap_SlotWrite()\n");
 
     bdplus_getSlot(dlx_getApp(vm), 0xFFFFFFFF, &newslot);
 

@@ -34,7 +34,8 @@
 #include "util/macro.h"
 #include "util/mutex.h"
 #include "util/strutl.h"
-#include "file/file.h"
+#include "file/configfile.h"
+#include "file/file_default.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -54,23 +55,47 @@ void bdplus_get_version(int *major, int *minor, int *micro)
   *micro = BDPLUS_VERSION_MICRO;
 }
 
+static int _load_svm(bdplus_t *plus)
+{
+    if (!plus->config->fopen) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "No device path or filesystem access function provided\n");
+        return -1;
+    }
+
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] loading BDSVM/00000.svm...\n");
+    if (bdplus_load_svm(plus, "BDSVM/00000.svm")) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error loading BDSVM/00000.svm\n");
+        return -1;
+    }
+
+    plus->loaded = 1;
+    return 0;
+}
+
 int32_t bdplus_get_code_gen(bdplus_t *plus)
 {
     if (!plus) return -1;
+    if (!plus->loaded && _load_svm(plus) < 0) return -1;
+
     return plus->gen;
 }
 
 int32_t bdplus_get_code_date(bdplus_t *plus)
 {
     if (!plus) return -1;
+    if (!plus->loaded && _load_svm(plus) < 0) return -1;
+
     return plus->date;
 }
 
 
 static char *_slots_file(void)
 {
-    const char *base = file_get_cache_dir();
-    return str_printf("%s/slots.bin", base ? base : "/tmp/");
+    char *base = file_get_cache_dir();
+    char *result;
+    result = str_printf("%s/slots.bin", base ? base : "/tmp/");
+    X_FREE(base);
+    return result;
 }
 
 static void _load_slots(bdplus_t *plus)
@@ -93,18 +118,13 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     bdplus_t *plus = NULL;
 
     // Change to TEAM BLUH-RAY, DOOM9 FORUMS.
-    DEBUG(DBG_BDPLUS, "[bdplus] initialising...\n");
-
-    if (!path) {
-        DEBUG(DBG_BDPLUS, "No path\n");
-        return NULL;
-    }
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] initialising...\n");
 
     /* Ensure libgcrypt is initialized before doing anything else */
-    DEBUG(DBG_BDPLUS, "Initializing libgcrypt...\n");
+    BD_DEBUG(DBG_BDPLUS, "Initializing libgcrypt...\n");
     if (!crypto_init())
     {
-        DEBUG(DBG_BDPLUS, "Failed to initialize libgcrypt\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "Failed to initialize libgcrypt\n");
         return NULL;
     }
 
@@ -118,7 +138,10 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
 
     memset(plus, 0, sizeof(*plus)); // I just don't like calloc, strange..
 
-    bdplus_config_load(config_path, &plus->config);
+    if (bdplus_config_load(config_path, &plus->config) < 0) {
+        X_FREE(plus);
+        return NULL;
+    }
 
     plus->free_slot = BDPLUS_NUM_SLOTS-1;
 
@@ -126,25 +149,40 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     plus->attachedStatus[0] = 0;
     plus->attachedStatus[1] = 7;
 
-    plus->device_path = (char*)malloc(strlen(path) + 1);
-    strcpy(plus->device_path, path);
+    if (path) {
+        plus->device_path = (char*)malloc(strlen(path) + 1);
+        strcpy(plus->device_path, path);
+
+        plus->config->fopen_handle = plus->device_path;
+        plus->config->fopen        = file_open_default;
+    }
 
     plus->mutex     = calloc(1, sizeof(BD_MUTEX));
     bd_mutex_init(plus->mutex);
 
-    DEBUG(DBG_BDPLUS, "[bdplus] loading BDSVM/00000.svm and flash.bin...\n");
-    if (bdplus_load_svm(plus, "BDSVM/00000.svm")) {
-        DEBUG(DBG_BDPLUS, "[bdplus] Error loading BDSVM/00000.svm\n");
-        bdplus_free(plus);
-        return NULL;
+    if (plus->config->fopen) {
+        if (_load_svm(plus) < 0) {
+            bdplus_free(plus);
+            return NULL;
+        }
     }
+
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] loading flash.bin...\n");
     _load_slots(plus);
 
     memcpy(plus->volumeID, vid, sizeof(plus->volumeID));
 
-    DEBUG(DBG_BDPLUS, "[bdplus] created and returning bdplus_t %p\n", plus);
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] created and returning bdplus_t %p\n", plus);
 
     return plus;
+}
+
+void bdplus_set_fopen(bdplus_t *plus, void *handle, BDPLUS_FILE_OPEN p)
+{
+    if (plus) {
+        plus->config->fopen_handle = handle;
+        plus->config->fopen        = p;
+    }
 }
 
 void bdplus_set_mk(bdplus_t *plus, const uint8_t *mk)
@@ -160,9 +198,13 @@ int32_t bdplus_start(bdplus_t *plus)
 
     if (!plus) return -1;
 
+    if (!plus->loaded && !_load_svm(plus)) {
+        return -1;
+    }
+
     bd_mutex_lock(plus->mutex);
 
-    DEBUG(DBG_BDPLUS, "[bdplus] running VM for conv_table...\n");
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] running VM for conv_table...\n");
     // FIXME: Run this as separate thread?
     result = bdplus_run_init(plus->vm);
 
@@ -176,7 +218,7 @@ int32_t bdplus_start(bdplus_t *plus)
 
 void bdplus_free(bdplus_t *plus)
 {
-    DEBUG(DBG_BDPLUS, "[bdplus] releasing %p..\n", plus);
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] releasing %p..\n", plus);
 
     if (!plus) {
         return;
@@ -218,14 +260,14 @@ void bdplus_free(bdplus_t *plus)
 
 bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 {
-    DEBUG(DBG_BDPLUS, "[bdplus] set_m2ts %p -> %u\n", plus, m2ts);
+    BD_DEBUG(DBG_BDPLUS, "[bdplus] set_m2ts %p -> %u\n", plus, m2ts);
 
     if (!plus) return NULL;
 
     bd_mutex_lock(plus->mutex);
 
     if (!plus->conv_tab) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
         bd_mutex_unlock(plus->mutex);
         return NULL;
     }
@@ -248,28 +290,28 @@ void bdplus_m2ts_close(bdplus_st_t *st)
 void bdplus_mmap(bdplus_t *plus, uint32_t id, void *mem )
 {
     if (!plus || !plus->config || !plus->config->ram) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: memory not initialized\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: memory not initialized\n");
         return;
     }
 
     if (plus->started) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap ignored: VM already running\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap ignored: VM already running\n");
         return;
     }
 
     switch (id) {
         case MMAP_ID_PSR:
-            DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: PSR register file at %p\n", mem);
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: PSR register file at %p\n", mem);
             bdplus_config_mmap(plus->config->ram, MEM_TYPE_PSR, mem, 128 * sizeof(uint32_t));
             break;
 
         case MMAP_ID_GPR:
-            DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: GPR register file at %p\n", mem);
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: GPR register file at %p\n", mem);
             bdplus_config_mmap(plus->config->ram, MEM_TYPE_GPR, mem, 4096 * sizeof(uint32_t));
             break;
 
         default:
-            DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: unknown region id %d\n", id);
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] mmap: unknown region id %d\n", id);
             break;
     }
 }
@@ -280,12 +322,12 @@ void bdplus_psr             ( bdplus_t *plus,
                               int      (*psr_write)(void *, int, uint32_t) )
 {
     if (!plus || !plus->config) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] set psr: no config loaded\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] set psr: no config loaded\n");
         return;
     }
 
     if (plus->started) {
-        DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] set psr ignored: VM already running\n");
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] set psr ignored: VM already running\n");
         return;
     }
 
@@ -305,6 +347,10 @@ static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, ui
 {
     if (!plus) return -1;
 
+    if (!plus->loaded && _load_svm(plus) < 0) {
+        return -1;
+    }
+
     if (event == BDPLUS_EVENT_START) {
         return bdplus_start(plus);
     }
@@ -312,7 +358,7 @@ static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, ui
     if (event == BDPLUS_RUN_CONVTAB) {
         /* this event is used when disc is played without menus. */
         /* try to emulate player to get converson table. */
-        DEBUG(DBG_BDPLUS, "[bdplus] received CONVERSION TABLE event\n");
+        BD_DEBUG(DBG_BDPLUS, "[bdplus] received CONVERSION TABLE event\n");
 
         unsigned int num_titles = param2;
 
@@ -327,17 +373,17 @@ static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, ui
 
     if (event == BDPLUS_EVENT_TITLE) {
         if (plus->conv_tab && param1 == 0xffff) {
-            DEBUG(DBG_BDPLUS, "[bdplus] ignoring FirstPlay title event (conversion table exists)\n");
+            BD_DEBUG(DBG_BDPLUS, "[bdplus] ignoring FirstPlay title event (conversion table exists)\n");
             return 0;
         }
-        DEBUG(DBG_BDPLUS, "[bdplus] received TITLE event: %d\n", param1);
+        BD_DEBUG(DBG_BDPLUS, "[bdplus] received TITLE event: %d\n", param1);
         return bdplus_run_title(plus, param1);
     }
 
     if (event == BDPLUS_EVENT_APPLICATION) {
         /* actual communication between BD+ and HDMV/BD-J uses registers PSR102-PSR104. */
         /* This event is just a notification that register has been written to. */
-        DEBUG(DBG_BDPLUS, "[bdplus] received APPLICATION LAYER event\n");
+        BD_DEBUG(DBG_BDPLUS, "[bdplus] received APPLICATION LAYER event\n");
         return bdplus_run_event210(plus->vm, param1);
     }
 

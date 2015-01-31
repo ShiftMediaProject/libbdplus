@@ -22,6 +22,8 @@
 
 #include "util/attributes.h"
 
+#include "file/filesystem.h"
+
 #include <stdint.h>
 
 
@@ -70,6 +72,9 @@ typedef struct bdplus_aes_key_s {
 
 
 typedef struct bdplus_config_s {
+    void               *fopen_handle;
+    BDPLUS_FILE_OPEN    fopen;
+
     bdplus_ram_t       *ram; /* mapped player memory */
     bdplus_dev_t       *dev;
     bdplus_ecdsa_key_t *ecdsa_keys;

@@ -67,8 +67,8 @@ BD_PRIVATE uint32_t  TRAP_Memset            ( uint8_t *,  uint8_t, uint32_t );
 BD_PRIVATE uint32_t  TRAP_ApplicationLayer  ( struct bdplus_config_s *, uint32_t, uint32_t, uint32_t * );
 BD_PRIVATE uint32_t  TRAP_Discovery         ( struct bdplus_config_s *, uint32_t, uint32_t, uint8_t *, uint32_t *, uint8_t * );
 BD_PRIVATE uint32_t  TRAP_DiscoveryRAM      ( struct bdplus_config_s *, uint32_t, uint8_t *, uint32_t ); // NS!
-BD_PRIVATE uint32_t  TRAP_LoadContentCode   ( const char *, uint8_t *, uint32_t, uint32_t, uint32_t *, uint8_t * );
-BD_PRIVATE uint32_t  TRAP_MediaCheck        ( const char *, uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t *, uint8_t * );
+BD_PRIVATE uint32_t  TRAP_LoadContentCode   ( struct bdplus_config_s *, uint8_t *, uint32_t, uint32_t, uint32_t *, uint8_t * );
+BD_PRIVATE uint32_t  TRAP_MediaCheck        ( struct bdplus_config_s *, uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t *, uint8_t * );
 BD_PRIVATE uint32_t  TRAP_RunNative         ( );
 BD_PRIVATE uint32_t  TRAP_000570            ( /* ? nop/vendor specific?*/ );
 

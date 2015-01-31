@@ -1,6 +1,7 @@
 /*
- * This file is part of libbluray
- * Copyright (C) 2011-2013  VideoLAN
+ * This file is part of libbdplus
+ * Copyright (C) 2008-2010  Accident
+ * Copyright (C) 2013       VideoLAN
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,23 +18,16 @@
  * <http://www.gnu.org/licenses/>.
  */
 
-#ifndef BLURAY_DIRS_H
-#define BLURAY_DIRS_H
+#ifndef LOADER_H_INCLUDED
+#define LOADER_H_INCLUDED
 
 #include "util/attributes.h"
 
-#ifdef _WIN32
-BD_PRIVATE int         win32_mkdir(const char *dir);
-#endif
+#include <stdint.h>
 
-/*
- * Config, cache and data dirs
- */
+struct VM_s;
+struct bdplus_file;
 
-BD_PRIVATE const char *file_get_config_system(const char *dir);
-
-BD_PRIVATE char *file_get_config_home(void) BD_ATTR_MALLOC;
-BD_PRIVATE char *file_get_cache_home(void) BD_ATTR_MALLOC;
-BD_PRIVATE char *file_get_data_home(void) BD_ATTR_MALLOC;
+BD_PRIVATE int32_t loader_load_svm (struct bdplus_file *fp, const char *fname, struct VM_s *vm, int *p_gen, int *p_date);
 
 #endif
