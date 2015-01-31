@@ -59,27 +59,32 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\file\configfile.c" />
     <ClCompile Include="..\src\file\dirs_win32.c" />
-    <ClCompile Include="..\src\file\file.c" />
+    <ClCompile Include="..\src\file\file_default.c" />
     <ClCompile Include="..\src\libbdplus\bdplus.c" />
     <ClCompile Include="..\src\libbdplus\bdplus_config.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\diff.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\dlx.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\event.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\interface.c" />
+    <ClCompile Include="..\src\libbdplus\bdsvm\loader.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\segment.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\sha1.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\slot.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\trap.c" />
     <ClCompile Include="..\src\libbdplus\bdsvm\trap_helper.c" />
     <ClCompile Include="..\src\libbdplus\internal.c" />
-    <ClCompile Include="..\src\libbdplus\loader.c" />
     <ClCompile Include="..\src\util\logging.c" />
+    <ClCompile Include="..\src\util\mutex.c" />
     <ClCompile Include="..\src\util\strutl.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\file\configfile.h" />
     <ClInclude Include="..\src\file\dirs.h" />
     <ClInclude Include="..\src\file\file.h" />
+    <ClInclude Include="..\src\file\filesystem.h" />
+    <ClInclude Include="..\src\file\file_default.h" />
     <ClInclude Include="..\src\libbdplus\bdplus.h" />
     <ClInclude Include="..\src\libbdplus\bdplus_config.h" />
     <ClInclude Include="..\src\libbdplus\bdplus_data.h" />
@@ -88,6 +93,7 @@
     <ClInclude Include="..\src\libbdplus\bdsvm\dlx_internal.h" />
     <ClInclude Include="..\src\libbdplus\bdsvm\event.h" />
     <ClInclude Include="..\src\libbdplus\bdsvm\interface.h" />
+    <ClInclude Include="..\src\libbdplus\bdsvm\loader.h" />
     <ClInclude Include="..\src\libbdplus\bdsvm\segment.h" />
     <ClInclude Include="..\src\libbdplus\bdsvm\sha1.h" />
     <ClInclude Include="..\src\libbdplus\bdsvm\slot.h" />
@@ -95,7 +101,6 @@
     <ClInclude Include="..\src\libbdplus\bdsvm\trap.h" />
     <ClInclude Include="..\src\libbdplus\bdsvm\trap_helper.h" />
     <ClInclude Include="..\src\libbdplus\internal.h" />
-    <ClInclude Include="..\src\libbdplus\loader.h" />
     <ClInclude Include="..\src\util\attributes.h" />
     <ClInclude Include="..\src\util\logging.h" />
     <ClInclude Include="..\src\util\macro.h" />
@@ -323,7 +328,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -368,7 +373,7 @@ cd $(ProjectDir)
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -412,7 +417,7 @@ cd $(ProjectDir)
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -460,7 +465,7 @@ cd $(ProjectDir)
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <BufferSecurityCheck>true</BufferSecurityCheck>
@@ -507,7 +512,7 @@ cd $(ProjectDir)
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -552,7 +557,7 @@ cd $(ProjectDir)
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -609,7 +614,7 @@ cd $(ProjectDir)
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005</DisableSpecificWarnings>
@@ -667,7 +672,7 @@ cd $(ProjectDir)
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005</DisableSpecificWarnings>
@@ -724,7 +729,7 @@ cd $(ProjectDir)
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267</DisableSpecificWarnings>
@@ -781,7 +786,7 @@ cd $(ProjectDir)
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267</DisableSpecificWarnings>
@@ -839,7 +844,7 @@ cd $(ProjectDir)
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005</DisableSpecificWarnings>
@@ -897,7 +902,7 @@ cd $(ProjectDir)
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005</DisableSpecificWarnings>
@@ -953,7 +958,7 @@ cd $(ProjectDir)
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267</DisableSpecificWarnings>
@@ -1010,7 +1015,7 @@ cd $(ProjectDir)
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
-      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267</DisableSpecificWarnings>

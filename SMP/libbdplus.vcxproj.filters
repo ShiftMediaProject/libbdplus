@@ -39,9 +39,6 @@
     <ClCompile Include="..\src\file\dirs_win32.c">
       <Filter>Source Files\file</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\file\file.c">
-      <Filter>Source Files\file</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\util\strutl.c">
       <Filter>Source Files\util</Filter>
     </ClCompile>
@@ -52,9 +49,6 @@
       <Filter>Source Files\libbdplus</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libbdplus\internal.c">
-      <Filter>Source Files\libbdplus</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libbdplus\loader.c">
       <Filter>Source Files\libbdplus</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libbdplus\bdplus.c">
@@ -86,6 +80,18 @@
     </ClCompile>
     <ClCompile Include="..\src\libbdplus\bdsvm\interface.c">
       <Filter>Source Files\libbdplus\bdsvm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libbdplus\bdsvm\loader.c">
+      <Filter>Source Files\libbdplus\bdsvm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\file\configfile.c">
+      <Filter>Source Files\file</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\file\file_default.c">
+      <Filter>Source Files\file</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\util\mutex.c">
+      <Filter>Source Files\util</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -120,9 +126,6 @@
       <Filter>Header Files\libbdplus</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libbdplus\internal.h">
-      <Filter>Header Files\libbdplus</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libbdplus\loader.h">
       <Filter>Header Files\libbdplus</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libbdplus\bdsvm\diff.h">
@@ -163,6 +166,18 @@
     </ClInclude>
     <ClInclude Include="src\libbdplus\bdplus-version.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libbdplus\bdsvm\loader.h">
+      <Filter>Header Files\libbdplus\bdsvm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\file\filesystem.h">
+      <Filter>Header Files\file</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\file\configfile.h">
+      <Filter>Header Files\file</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\file\file_default.h">
+      <Filter>Header Files\file</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
