@@ -25,6 +25,7 @@
 #endif
 
 #if defined(_WIN32)
+#   define WIN32_LEAN_AND_MEAN
 #   include <windows.h>
 #elif defined(HAVE_PTHREAD_H)
 #   include <pthread.h>
