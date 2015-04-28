@@ -66,9 +66,9 @@ static int _load_aes_keys(bdplus_aes_key_t *aes_keys, const char *base)
 
 static int _load_ecdsa_keys(bdplus_ecdsa_key_t *ecdsa_keys, const char *base)
 {
+    const char *p;
     char *path = str_printf("%s/" ECDSA_KEYS_FILE, base);
     char *cfg;
-    char *p;
     int   num_ecdsa_keys = 0;
 
     cfg = file_load(path, NULL);
@@ -190,9 +190,9 @@ static void _dev_free(bdplus_dev_t **pp)
 
 static int _load_memory(bdplus_ram_t **ram, const char *base)
 {
+    const char *p;
     char *path;
     char *cfg;
-    char *p;
 
     path = str_printf("%s/" MEMORY_MAP_FILE, base);
     cfg = file_load(path, NULL);

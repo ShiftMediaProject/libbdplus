@@ -28,8 +28,8 @@
 BD_PRIVATE char * str_dup(const char *str) BD_ATTR_MALLOC;
 BD_PRIVATE char * str_printf(const char *fmt, ...) BD_ATTR_FORMAT_PRINTF(1,2) BD_ATTR_MALLOC;
 
-BD_PRIVATE char * str_skip_white(char *p);
-BD_PRIVATE char * str_next_line(char *p);
+BD_PRIVATE const char * str_skip_white    (const char *str);
+BD_PRIVATE const char * str_next_line     (const char *str);
 
 BD_PRIVATE char * str_print_hex(char *out, const uint8_t *str, int count);
 
