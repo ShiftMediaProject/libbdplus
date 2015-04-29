@@ -741,9 +741,9 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
         matched_ctx = get_sha_ctx(sha_head, dst);
         memset(dst, 0, 352); //352, according to jumper snapshots
         if (matched_ctx) {
-        sha_SHA1_Init(&matched_ctx->sha);
-        // Call UPDATE if we were also given data
-        TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
+            sha_SHA1_Init(&matched_ctx->sha);
+            // Call UPDATE if we were also given data
+            TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
         }
         break;
 
@@ -751,10 +751,10 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
         BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(UPDATE)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
         if (matched_ctx) {
-        sha_SHA1_Update(&matched_ctx->sha, src, len);
-        // This call is not required, only here to make "dst" be identical
-        // to reference player.
-        sha_reference(dst, &matched_ctx->sha);
+            sha_SHA1_Update(&matched_ctx->sha, src, len);
+            // This call is not required, only here to make "dst" be identical
+            // to reference player.
+            sha_reference(dst, &matched_ctx->sha);
         }
         break;
 
@@ -765,15 +765,15 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
         BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(FINAL)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
         if (matched_ctx) {
-        // UPDATE if we were also given data.
-        TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
-        // Call FINAL.
-        sha_SHA1_Final(&matched_ctx->sha, digest);
+            // UPDATE if we were also given data.
+            TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
+            // Call FINAL.
+            sha_SHA1_Final(&matched_ctx->sha, digest);
 
-        // Copy over the digest
-        memcpy(dst, digest, sizeof(digest));
+            // Copy over the digest
+            memcpy(dst, digest, sizeof(digest));
 
-        free_sha_ctx(sha_head, matched_ctx);
+            free_sha_ctx(sha_head, matched_ctx);
         }
         break;
       }
