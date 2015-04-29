@@ -518,10 +518,12 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
     if (!numMergeTables) return 0;
 
     // Grow the list to hold the new tables.
+    void *tmp = set1->Tables;
     set1->Tables = (subtable_t *) realloc(set1->Tables,
                                           (set1->numTables + numMergeTables) *
                                           sizeof(subtable_t));
     if (!set1->Tables) {
+        X_FREE(tmp);
         set1->numTables = 0;
         BD_DEBUG(DBG_BDPLUS,"[segment] Out of memory.\n");
         return 0;
