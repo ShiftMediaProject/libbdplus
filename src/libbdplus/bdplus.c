@@ -92,25 +92,31 @@ int32_t bdplus_get_code_date(bdplus_t *plus)
 static char *_slots_file(void)
 {
     char *base = file_get_cache_dir();
-    char *result;
-    result = str_printf("%s/slots.bin", base ? base : "/tmp/");
-    X_FREE(base);
+    char *result = NULL;
+    if (base) {
+        result = str_printf("%s/slots.bin", base);
+        X_FREE(base);
+    }
     return result;
 }
 
 static void _load_slots(bdplus_t *plus)
 {
     char *file_name = _slots_file();
-    bdplus_load_slots(plus, file_name);
-    X_FREE(file_name);
+    if (file_name) {
+        bdplus_load_slots(plus, file_name);
+        X_FREE(file_name);
+    }
 }
 
 static void _save_slots(bdplus_t *plus)
 {
     char *file_name = _slots_file();
-    file_mkpath(file_name);
-    bdplus_save_slots(plus, file_name);
-    X_FREE(file_name);
+    if (file_name) {
+        file_mkpath(file_name);
+        bdplus_save_slots(plus, file_name);
+        X_FREE(file_name);
+    }
 }
 
 bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *vid)
@@ -150,14 +156,22 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     plus->attachedStatus[1] = 7;
 
     if (path) {
-        plus->device_path = (char*)malloc(strlen(path) + 1);
-        strcpy(plus->device_path, path);
-
+        plus->device_path = str_dup(path);
+        if (!plus->device_path) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
+            bdplus_free(plus);
+            return NULL;
+        }
         plus->config->fopen_handle = plus->device_path;
         plus->config->fopen        = file_open_default;
     }
 
     plus->mutex     = calloc(1, sizeof(BD_MUTEX));
+    if (!plus->mutex) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
+        bdplus_free(plus);
+        return NULL;
+    }
     bd_mutex_init(plus->mutex);
 
     if (plus->config->fopen) {
@@ -224,7 +238,9 @@ void bdplus_free(bdplus_t *plus)
         return;
     }
 
-    bd_mutex_lock(plus->mutex);
+    if (plus->mutex) {
+        bd_mutex_lock(plus->mutex);
+    }
 
     if (plus->started) {
         bdplus_run_shutdown(plus);
@@ -238,8 +254,11 @@ void bdplus_free(bdplus_t *plus)
 
     if (plus->conv_tab) {
         char *file = bdplus_disc_cache_file(plus, "convtab.bin");
-        FILE *fp = fopen(file, "wb");
-        X_FREE(file);
+        FILE *fp = NULL;
+        if (file) {
+            fp = fopen(file, "wb");
+            X_FREE(file);
+        }
         if (fp) {
             segment_save(plus->conv_tab, fp);
             fclose(fp);
@@ -251,9 +270,11 @@ void bdplus_free(bdplus_t *plus)
 
     bdplus_config_free(&plus->config);
 
-    bd_mutex_unlock(plus->mutex);
-    bd_mutex_destroy(plus->mutex);
-    X_FREE(plus->mutex);
+    if (plus->mutex) {
+        bd_mutex_unlock(plus->mutex);
+        bd_mutex_destroy(plus->mutex);
+        X_FREE(plus->mutex);
+    }
 
     X_FREE(plus);
 }

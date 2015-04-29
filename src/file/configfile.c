@@ -53,6 +53,10 @@ int file_mkpath(const char *path)
     char *dir = str_dup(path);
     char *end = dir;
 
+    if (!dir) {
+        return -1;
+    }
+
     while (*end == '/')
         end++;
 
@@ -82,7 +86,11 @@ char *file_get_cache_dir(void)
     char *cache = file_get_cache_home();
     char *dir;
 
-    dir = str_printf("%s/%s", cache ? cache : "/tmp/", BDPLUS_DIR);
+    if (!cache) {
+        return NULL;
+    }
+
+    dir = str_printf("%s/%s", cache, BDPLUS_DIR);
     X_FREE(cache);
     file_mkpath(dir);
 
@@ -92,7 +100,13 @@ char *file_get_cache_dir(void)
 static char *_probe_config_dir(const char *base, const char *vm, const char *file)
 {
     char *dir = str_printf("%s/%s/%s/%s", base, BDPLUS_DIR, vm, file);
-    FILE *fp  = fopen(dir, "r");
+    FILE *fp;
+
+    if (!dir) {
+        return NULL;
+    }
+
+    fp = fopen(dir, "r");
 
     if (fp) {
         fclose(fp);
@@ -120,6 +134,9 @@ char *file_get_config_dir(const char *file)
 
     /* try home directory */
     config_home = file_get_config_home();
+    if (!config_home) {
+        return NULL;
+    }
     dir = _probe_config_dir(config_home, vm, file);
     X_FREE(config_home);
     if (dir) {
@@ -175,6 +192,10 @@ char *file_load(const char *path, uint32_t *p_size)
 {
     char *mem;
     FILE *fp;
+
+    if (!path) {
+        return NULL;
+    }
 
     fp = fopen(path, "rb");
 

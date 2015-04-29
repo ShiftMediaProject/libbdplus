@@ -45,6 +45,10 @@ static int _load_aes_keys(bdplus_aes_key_t *aes_keys, const char *base)
     uint32_t size = 0;
     uint32_t num_keys, ii;
 
+    if (!path) {
+        return -1;
+    }
+
     keys = (uint8_t *)file_load(path, &size);
     X_FREE(path);
 
@@ -70,6 +74,10 @@ static int _load_ecdsa_keys(bdplus_ecdsa_key_t *ecdsa_keys, const char *base)
     char *path = str_printf("%s/" ECDSA_KEYS_FILE, base);
     char *cfg;
     int   num_ecdsa_keys = 0;
+
+    if (!path) {
+        return -1;
+    }
 
     cfg = file_load(path, NULL);
     X_FREE(path);
@@ -109,10 +117,19 @@ static int _load_ram(bdplus_ram_t **p, const char *base, uint32_t address, const
 
     if (!*p) {
         *p = calloc(1, sizeof(bdplus_ram_t));
+        if (!*p) {
+            return 0;
+        }
     }
     ram = *p;
 
+    void *tmp = ram->area;
     ram->area = realloc(ram->area, (ram->num_area + 1) * sizeof(*ram->area));
+    if (!ram->area) {
+        X_FREE(tmp);
+        BD_DEBUG(DBG_CRIT, "out of memory\n");
+        return 0;
+    }
 
     memset(&ram->area[ram->num_area], 0, sizeof(ram->area[ram->num_area]));
     ram->area[ram->num_area].start_address = address;
@@ -128,10 +145,12 @@ static int _load_ram(bdplus_ram_t **p, const char *base, uint32_t address, const
     } else {
         /* load from file */
         char *path = str_printf("%s/%s", base, file);
+        if (!path) {
+            return 0;
+        }
 
         ram->area[ram->num_area].memory = file_load(path, &ram->area[ram->num_area].size);
         ram->area[ram->num_area].mem    = ram->area[ram->num_area].memory;
-
         X_FREE(path);
 
         if (!ram->area[ram->num_area].mem) {
@@ -165,6 +184,9 @@ static int _load_dev_discovery(bdplus_dev_t *dev, const char *base)
 
     for (ii = 0; ii < MAX_DEV_DISCOVERY; ii++) {
         char *path = str_printf("%s/" DEV_DISCOVERY_FILE, base, ii + 1);
+        if (!path) {
+            break;
+        }
         dev[ii].mem = (uint8_t *)file_load(path, &dev[ii].size);
         X_FREE(path);
         if (!dev[ii].mem) {
@@ -192,11 +214,13 @@ static int _load_memory(bdplus_ram_t **ram, const char *base)
 {
     const char *p;
     char *path;
-    char *cfg;
+    char *cfg = NULL;
 
     path = str_printf("%s/" MEMORY_MAP_FILE, base);
-    cfg = file_load(path, NULL);
-    X_FREE(path);
+    if (path) {
+        cfg = file_load(path, NULL);
+        X_FREE(path);
+    }
 
     if (!cfg) {
         BD_DEBUG(DBG_FILE | DBG_CRIT, "Error loading memory map file '"MEMORY_MAP_FILE"'\n");
@@ -246,6 +270,10 @@ int bdplus_config_load(const char *config_path,
 {
     bdplus_config_free(p_config);
     bdplus_config_t *config = *p_config = calloc(1, sizeof(bdplus_config_t));
+    if (!config) {
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "out of memory\n");
+        return -1;
+    }
 
     char *base = NULL;
     if (!config_path) {
@@ -260,6 +288,11 @@ int bdplus_config_load(const char *config_path,
     config->aes_keys   = calloc(MAX_AES_KEYS,      sizeof(bdplus_aes_key_t));
     config->ecdsa_keys = calloc(MAX_ECDSA_KEYS,    sizeof(bdplus_ecdsa_key_t));
     config->dev        = calloc(MAX_DEV_DISCOVERY, sizeof(bdplus_dev_t));
+
+    if (!config->aes_keys || !config->ecdsa_keys || !config->dev) {
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "out of memory\n");
+        return -1;
+    }
 
     config->num_aes_keys = _load_aes_keys(config->aes_keys, config_path);
     if (config->num_aes_keys < 0) {

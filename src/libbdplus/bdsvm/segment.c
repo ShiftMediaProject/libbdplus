@@ -1046,9 +1046,12 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
     // entry so we have to find them again.
 
     bdplus_st_t *st = calloc(1, sizeof(*st));
+    if (!st) {
+        BD_DEBUG(DBG_CRIT, "out of memory\n");
+        return NULL;
+    }
     st->stream_table = table;
     st->table = ct;
-
     BD_DEBUG(DBG_BDPLUS,"[segment] settable(%05u.m2ts): %p\n", m2ts, st);
 
     return st;

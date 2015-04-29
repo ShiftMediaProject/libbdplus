@@ -84,6 +84,9 @@ int32_t bdplus_load_svm(bdplus_t *plus, const char *fname)
 
     dlx_freeVM(&plus->vm);
     plus->vm = dlx_initVM(plus);
+    if (!plus->vm) {
+        return -1;
+    }
 
     fp = file_open(plus->config, fname);
     if (!fp) {

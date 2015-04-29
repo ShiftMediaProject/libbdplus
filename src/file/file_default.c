@@ -27,6 +27,7 @@
 
 #include "util/macro.h"
 #include "util/strutl.h"
+#include "util/logging.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,6 +64,11 @@ BDPLUS_FILE_H *file_open_default(void *handle, const char* file_name)
     FILE          *fp;
 
     file_path = str_printf("%s"DIR_SEP"%s", device_root, file_name);
+    if (!file_path) {
+        BD_DEBUG(DBG_CRIT, "out of memory\n");
+        return NULL;
+    }
+
     fp = fopen(file_path, "rb");
     X_FREE(file_path);
 
