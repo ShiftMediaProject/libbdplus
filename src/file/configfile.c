@@ -50,7 +50,7 @@ int file_mkpath(const char *path)
 {
     struct stat s;
     int result = 1;
-    char *dir = str_printf("%s", path);
+    char *dir = str_dup(path);
     char *end = dir;
 
     while (*end == '/')
