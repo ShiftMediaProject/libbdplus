@@ -1311,7 +1311,7 @@ uint32_t TRAP_MediaCheck(bdplus_config_t *config, uint8_t *FileName, uint32_t Fi
     }
 #endif
 
-    if (file_seek(fd, seek, SEEK_SET)) {
+    if (file_seek(fd, seek, SEEK_SET) < 0) {
         BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to seek %s to %"PRIu64"\n", (char *)FileName, seek);
         file_close(fd);
         return STATUS_INVALID_PARAMETER;
