@@ -344,7 +344,6 @@
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ProgramDataBaseFileName>$(OutDir)\lib\x86\$(TargetName).pdb</ProgramDataBaseFileName>
@@ -388,7 +387,6 @@ cd $(ProjectDir)
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ProgramDataBaseFileName>$(OutDir)\lib\x64\$(TargetName).pdb</ProgramDataBaseFileName>
@@ -433,7 +431,6 @@ cd $(ProjectDir)
       <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -480,7 +477,6 @@ cd $(ProjectDir)
       <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <BufferSecurityCheck>true</BufferSecurityCheck>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -526,7 +522,6 @@ cd $(ProjectDir)
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -571,7 +566,6 @@ cd $(ProjectDir)
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <PreprocessorDefinitions>HAVE_CONFIG_H;fseeko=_fseeki64;inline=__inline;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;$(OutDir)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <DisableSpecificWarnings>4996;4244;4005;4267;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <ProgramDataBaseFileName>$(IntDir)$(TargetName).pdb</ProgramDataBaseFileName>
@@ -621,7 +615,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -678,7 +671,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -735,7 +727,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -792,7 +783,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -849,7 +839,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -906,7 +895,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -963,7 +951,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
@@ -1019,7 +1006,6 @@ cd $(ProjectDir)
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <OmitFramePointers>true</OmitFramePointers>
       <StringPooling>true</StringPooling>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
       <FloatingPointExceptions>false</FloatingPointExceptions>
