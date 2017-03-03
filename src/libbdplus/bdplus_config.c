@@ -291,6 +291,7 @@ int bdplus_config_load(const char *config_path,
 
     if (!config->aes_keys || !config->ecdsa_keys || !config->dev) {
         BD_DEBUG(DBG_FILE | DBG_CRIT, "out of memory\n");
+        X_FREE(base);
         return -1;
     }
 
