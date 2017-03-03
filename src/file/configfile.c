@@ -171,6 +171,11 @@ static char *_load_fp(FILE *fp, uint32_t *p_size)
     }
 
     data      = malloc(file_size + 1);
+    if (!data) {
+        BD_DEBUG(DBG_FILE, "Out of memory\n");
+        return NULL;
+    }
+
     read_size = fread(data, 1, file_size, fp);
 
     if (read_size != file_size) {
