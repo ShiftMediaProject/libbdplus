@@ -28,10 +28,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <shlobj.h>
 #include <windows.h>
+#include <shlobj.h>
 #include <limits.h>
-#include <direct.h>
 
 
 int win32_mkdir(const char *dir)
@@ -56,7 +55,9 @@ char *file_get_data_home(void)
                                  NULL, SHGFP_TYPE_CURRENT, wdir)) {
         int len = WideCharToMultiByte (CP_UTF8, 0, wdir, -1, NULL, 0, NULL, NULL);
         char *appdir = malloc(len);
-        WideCharToMultiByte (CP_UTF8, 0, wdir, -1, appdir, len, NULL, NULL);
+        if (appdir) {
+            WideCharToMultiByte (CP_UTF8, 0, wdir, -1, appdir, len, NULL, NULL);
+        }
         return appdir;
     }
 
@@ -85,7 +86,9 @@ const char *file_get_config_system(const char *dir)
                     NULL, SHGFP_TYPE_CURRENT, wdir)) {
             int len = WideCharToMultiByte (CP_UTF8, 0, wdir, -1, NULL, 0, NULL, NULL);
             appdir = malloc(len);
-            WideCharToMultiByte (CP_UTF8, 0, wdir, -1, appdir, len, NULL, NULL);
+            if (appdir) {
+                WideCharToMultiByte (CP_UTF8, 0, wdir, -1, appdir, len, NULL, NULL);
+            }
             return appdir;
         } else {
             BD_DEBUG(DBG_FILE, "Can't find common configuration directory !\n");

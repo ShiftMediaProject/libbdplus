@@ -77,6 +77,12 @@ BDPLUS_FILE_H *file_open_default(void *handle, const char* file_name)
     }
 
     file = calloc(1, sizeof(BDPLUS_FILE_H));
+    if (!file) {
+        BD_DEBUG(DBG_CRIT, "out of memory\n");
+        fclose(fp);
+        return NULL;
+    }
+
     file->internal = fp;
     file->close    = _file_close;
     file->seek     = _file_seek;

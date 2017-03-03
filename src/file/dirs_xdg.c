@@ -26,7 +26,6 @@
 #include "util/strutl.h"
 #include "util/logging.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -99,6 +98,9 @@ const char *file_get_config_system(const char *dir)
         if (xdg_sys && *xdg_sys) {
 
             dirs = calloc(1, strlen(xdg_sys) + 2);
+            if (!dirs) {
+                return NULL;
+            }
             strcpy(dirs, xdg_sys);
 
             char *pt = dirs;
