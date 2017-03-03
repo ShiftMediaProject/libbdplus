@@ -90,10 +90,14 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
 
     BD_DEBUG(DBG_BDPLUS,"[diff] Memory size is %08X, num diff-files %08X\n", size, count);
 
-    if (trap >= count) return -1;
-
-    if (size > vmsize) return -2; // Safety
-
+    if (trap >= count) {
+        fclose(fd);
+        return -1;
+    }
+    if (size > vmsize) {
+        fclose(fd);
+        return -2; // Safety
+    }
 
     // Clear the area first.
     memset(addr, 0, vmsize);
@@ -170,7 +174,10 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
     shalen = sizeof(offset) + sizeof(*len) + strlen((char *)fname) + 1;
     namehash = (uint8_t *)malloc( shalen );
-    if (!namehash) return STATUS_INTERNAL_ERROR;
+    if (!namehash) {
+        fclose(fd);
+        return STATUS_INTERNAL_ERROR;
+    }
 
     // SHA[64bit-offset, 32bit-len, filename]
     STORE8(&namehash[0], offset);
