@@ -1295,7 +1295,6 @@ uint32_t TRAP_MediaCheck(bdplus_config_t *config, uint8_t *FileName, uint32_t Fi
     fd = file_open(config, (char *)FileName);
     if (!fd) {
         BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
-        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
 #if 0
