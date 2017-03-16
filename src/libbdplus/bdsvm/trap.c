@@ -1025,7 +1025,7 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
         return STATUS_INVALID_PARAMETER;
     if ( (dev == 1) && (qID != 1) && (qID != 2) && (qID != 3) )
         return STATUS_INVALID_PARAMETER;
-    if ( (dev == 2) & (qID != 0) & (qID != 1) )
+    if ( (dev == 2) && (qID != 0) && (qID != 1) && (qID != 2) )
         return STATUS_NOT_SUPPORTED;
 
     if (!config || !config->dev) {
