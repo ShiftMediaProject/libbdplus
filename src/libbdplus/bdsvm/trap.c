@@ -426,7 +426,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     }
 
     /* Build an s-expression for the hash */
-    gcry_sexp_build(&sexp_data, NULL,
+    gcry_err = gcry_sexp_build(&sexp_data, NULL,
                     "(data"
 #if defined(GCRYPT_VERSION_NUMBER) && GCRYPT_VERSION_NUMBER >= 0x010600
                     /*
@@ -441,6 +441,15 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
                     "  (value %m))",
                     mpi_hash
                     );
+
+    if (gcry_err)
+    {
+      memset(errstr, 0, sizeof(errstr));
+      gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
+      BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_PrivateKey(%X, %08X) error building "
+            "sexp_data: %s\n",
+            keyID, controlWord, errstr);
+    }
 
     /* Dump information about the data s-expression when debugging */
     if (GCRYPT_DEBUG)
