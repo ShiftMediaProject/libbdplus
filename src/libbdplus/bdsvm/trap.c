@@ -479,23 +479,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
      */
     char *strfmt_key = NULL;
     if ( keyID == 0 ) {
-      strfmt_key = (char*)malloc(
-        sizeof("(private-key") +
-        sizeof("(ecdsa") +
-        sizeof("(p #00") + sizeof(CA_q) + sizeof("#)") +
-        sizeof("(a #00") + sizeof(CA_a) + sizeof("#)") +
-        sizeof("(b #00") + sizeof(CA_b) + sizeof("#)") +
-        sizeof("(g #04") +
-            sizeof(CA_x_G) +
-            sizeof(CA_y_G) +
-            sizeof("#)") +
-        sizeof("(n #00") + sizeof(CA_n) + sizeof("#)") +
-        sizeof("(q #04") +
-            strlen(CA_x_Q0) +
-            strlen(CA_y_Q0) +
-            sizeof("#)") +
-        sizeof("(d #00") + strlen(CA_d0) + sizeof("#)))") + 1);
-      sprintf(strfmt_key,
+      strfmt_key = str_printf(
         "(private-key"
         "(ecdsa"
         "(p #00%s#)"
@@ -524,23 +508,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     }
     else
     {
-      strfmt_key = (char*)malloc(
-        sizeof("(private-key") +
-        sizeof("(ecdsa") +
-        sizeof("(p #00") + sizeof(CA_q) + sizeof("#)") +
-        sizeof("(a #00") + sizeof(CA_a) + sizeof("#)") +
-        sizeof("(b #00") + sizeof(CA_b) + sizeof("#)") +
-        sizeof("(g #04") +
-            sizeof(CA_x_G) +
-            sizeof(CA_y_G) +
-            sizeof("#)") +
-        sizeof("(n #00") + sizeof(CA_n) + sizeof("#)") +
-        sizeof("(q #04") +
-            strlen(CA_x_Q1) +
-            strlen(CA_y_Q1) +
-            sizeof("#)") +
-        sizeof("(d #00") + strlen(CA_d1) + sizeof("#)))") + 1);
-      sprintf(strfmt_key,
+      strfmt_key = str_printf(
         "(private-key"
         "(ecdsa"
         "(p #00%s#)"
