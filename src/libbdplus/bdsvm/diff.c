@@ -212,7 +212,7 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
                    sha_hdr.next - (uint32_t)sizeof(sha_hdr.len));
 
             // Read in all digests, perhaps error checking?
-            if (!fread(dst, sha_hdr.next - sizeof(sha_hdr.len), 1, fd)) {
+            if (fread(dst, sha_hdr.next - sizeof(sha_hdr.len), 1, fd) != 1) {
                 BD_DEBUG(DBG_BDPLUS,"[diff] Short read on hash_db.bin!\n");
             }
             // Update new len
