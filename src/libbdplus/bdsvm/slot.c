@@ -70,11 +70,11 @@ uint32_t slot_SlotAttach(VM *vm,
     PC = dlx_getPC(vm) - 4; // Pull back 4
     IF = dlx_getIF(vm);
 
-    if ( slot >= BDPLUS_NUM_SLOTS )
-        return STATUS_INVALID_PARAMETER;
-
     if (slot == 0xFFFFFFFF)
         return bdplus_new_slot(dlx_getApp(vm));
+
+    if ( slot >= BDPLUS_NUM_SLOTS )
+        return STATUS_INVALID_PARAMETER;
 
     // Use 16 bytes from code_start,
     // Use codeLen*4 bytes from PC
