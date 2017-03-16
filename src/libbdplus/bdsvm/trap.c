@@ -139,10 +139,12 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
 
     BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Aes(KeyID %08X)\n", opOrKeyID);
 
+#if 0
     if (opOrKeyID == 0xFFF10002) {
         BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT, "[TRAP] TRAP_Aes(AES_ECB_DECRYPT_MEDIA_KEY) not implemented\n");
         return STATUS_INVALID_PARAMETER;
     }
+#endif
 
     if (opOrKeyID > 0xFFF10002)
         return STATUS_INVALID_PARAMETER;
@@ -178,8 +180,11 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
         break;
 
     case 0xFFF10002: // AES_DECRYPT_MEDIA_KEY
+        BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT, "[TRAP] TRAP_Aes(AES_ECB_DECRYPT_MEDIA_KEY) not implemented\n");
         key = mk;
         // TODO
+
+        /* fall thru */
 
     case 0xFFF10001: // AES_DECRYPT
         BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_DECRYPT): %p->%p (%d)\n", src, dst, len);
