@@ -358,9 +358,10 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
 {
     uint8_t *message = NULL;
     gcry_error_t gcry_err;
-    gcry_mpi_t mpi_hash;
-    gcry_sexp_t sexp_key, sexp_data, sexp_sig, sexp_r, sexp_s;
+    gcry_mpi_t mpi_hash = NULL;
+    gcry_sexp_t sexp_key = NULL, sexp_data = NULL, sexp_sig = NULL, sexp_r = NULL, sexp_s = NULL;
     char errstr[100];
+    uint32_t result = STATUS_INVALID_PARAMETER;
 
     if (!config || !config->ecdsa_keys) {
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_PrivateKey: ECDSA keys not loaded.\n");
@@ -541,6 +542,11 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
         );
     }
 
+    if (!strfmt_key) {
+      BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] TRAP_PrivateKey: out of memory ?\n");
+      goto error;
+    }
+
     /* Now build the S-expression */
     gcry_err = gcry_sexp_build(&sexp_key, NULL, strfmt_key);
     if (gcry_err)
@@ -608,6 +614,9 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     memcpy(dst, r, 20);
     memcpy(dst + 20, s, 20);
 
+    result = STATUS_OK;
+
+ error:
     /* Free allocated memory */
     gcry_mpi_release(mpi_hash);
     gcry_sexp_release(sexp_key);
@@ -620,7 +629,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     X_FREE(message);
     X_FREE(strfmt_key);
 
-    return STATUS_OK;
+    return result;
 }
 
 // write <len> random bytes to <dst>
