@@ -209,7 +209,10 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
               str_print_hex(str, sha_hdr.digest, sizeof(digest)));
 
         sha_hdr.next = FETCH4((uint8_t *)&sha_hdr.next);
-
+        if (sha_hdr.next < sizeof(sha_hdr.len)) {
+            BD_DEBUG(DBG_BDPLUS,"[diff] invalid data in hash_db.bin\n");
+            break;
+        }
         if (!memcmp(digest, sha_hdr.digest, sizeof(digest))) {
             // Found the digest we are looking for
             sha_hdr.len = FETCH4((uint8_t *)&sha_hdr.len);
