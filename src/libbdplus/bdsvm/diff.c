@@ -95,6 +95,7 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
         return -1;
     }
     if (size > vmsize) {
+        BD_DEBUG(DBG_BDPLUS,"[diff] Diff size larger than vmsize\n");
         fclose(fd);
         return -2; // Safety
     }
@@ -114,6 +115,11 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
             start  = FETCH4((uint8_t*)&start);
             length = FETCH4((uint8_t*)&length);
 
+            if ((uint64_t)start + length > (uint64_t)vmsize) {
+              BD_DEBUG(DBG_BDPLUS,"[diff] Diff skipping load (would exceed vmsize)\n");
+              fclose(fd);
+              return -2;
+            }
             if (fread(&addr[ start ], length, 1, fd) != 1) goto fail;
         } // currdiff
 
