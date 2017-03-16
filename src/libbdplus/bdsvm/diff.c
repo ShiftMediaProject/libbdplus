@@ -223,7 +223,10 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
         // Seek past this entry, "next" number of bytes from "next" position,
         // but we read "next" AND "len".
-        fseek(fd, sha_hdr.next - sizeof(sha_hdr.len), SEEK_CUR);
+        if (fseek(fd, sha_hdr.next - sizeof(sha_hdr.len), SEEK_CUR) < 0) {
+          BD_DEBUG(DBG_BDPLUS,"[diff] Seek to next hash_db.bin failed\n");
+          break;
+        }
 
     } // while fread
 
