@@ -22,6 +22,10 @@
 
 #include <stdint.h>
 
+#ifndef BD_PUBLIC
+#  define BD_PUBLIC
+#endif
+
 /* Keep this compatible with libaacs ! */
 typedef struct bdplus_file BDPLUS_FILE_H;
 struct bdplus_file
@@ -57,6 +61,8 @@ typedef BDPLUS_FILE_H* (*BDPLUS_FILE_OPEN)(void *handle, const char *filename);
  * @param p function pointer
  */
 struct bdplus_s;
+
+BD_PUBLIC
 void bdplus_set_fopen(struct bdplus_s *bdplus, void *handle, BDPLUS_FILE_OPEN p);
 
 

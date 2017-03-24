@@ -22,6 +22,7 @@
 #include "config.h"
 #endif
 
+#include "util/attributes.h" /* included before bdplus.h (define BD_PUBLIC for win32 dll exports) */
 #include "bdplus.h"
 
 #include "bdplus_data.h"
