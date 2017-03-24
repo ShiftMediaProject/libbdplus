@@ -38,7 +38,10 @@ int win32_mkdir(const char *dir)
     wchar_t wdir[MAX_PATH];
 
     MultiByteToWideChar(CP_UTF8, 0, dir, -1, wdir, MAX_PATH);
-    return _wmkdir(wdir);
+
+    if (!CreateDirectoryW(wdir, NULL))
+      return -1;
+    return 0;
 }
 
 char *file_get_config_home(void)
