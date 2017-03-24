@@ -20,10 +20,9 @@
 #ifndef FILE_DEFAULT_H_
 #define FILE_DEFAULT_H_
 
-#include "filesystem.h"
-
 #include "util/attributes.h"
 
-BD_PRIVATE BDPLUS_FILE_H *file_open_default(void *root_path, const char *file_name);
+struct bdplus_file;
+BD_PRIVATE struct bdplus_file *file_open_default(void *root_path, const char *file_name);
 
 #endif /* FILE_DEFAULT_H_ */
