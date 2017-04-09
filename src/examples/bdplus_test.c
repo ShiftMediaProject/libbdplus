@@ -75,7 +75,7 @@ static void _libaacs_get_vid(uint8_t *vid, uint8_t *mk, const char *root)
     memcpy(vid, aacs_vid, 16);
 
     const uint8_t *aacs_mk = aacs_get_mk(aacs);
-    if (!aacs_vid) {
+    if (!aacs_mk) {
         fprintf(stderr, "aacs_get_mk() failed.\n");
         aacs_close(aacs);
         exit(1);
