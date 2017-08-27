@@ -383,10 +383,10 @@
       <AdditionalLibraryDirectories>$(OutDir)\lib\x86\;$(ProjectDir)\..\..\prebuilt\lib\x86\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -397,8 +397,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -408,8 +408,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -438,10 +438,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <AdditionalLibraryDirectories>$(OutDir)\lib\x64\;$(ProjectDir)\..\..\prebuilt\lib\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -452,8 +452,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -463,8 +463,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -497,10 +497,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>5.1</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -511,8 +511,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -522,8 +522,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -556,10 +556,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>5.1</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -570,8 +570,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -581,8 +581,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -613,10 +613,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -627,8 +627,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -638,8 +638,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -670,10 +670,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -684,8 +684,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -695,8 +695,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -734,10 +734,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <AdditionalLibraryDirectories>$(OutDir)\lib\x86\;$(ProjectDir)\..\..\prebuilt\lib\x86\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -748,8 +748,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -759,8 +759,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -798,10 +798,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <AdditionalLibraryDirectories>$(OutDir)\lib\x86\;$(ProjectDir)\..\..\prebuilt\lib\x86\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -812,8 +812,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -823,8 +823,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -862,10 +862,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <AdditionalLibraryDirectories>$(OutDir)\lib\x64\;$(ProjectDir)\..\..\prebuilt\lib\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -876,8 +876,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -887,8 +887,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -926,10 +926,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <AdditionalLibraryDirectories>$(OutDir)\lib\x64\;$(ProjectDir)\..\..\prebuilt\lib\x64\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -940,8 +940,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -951,8 +951,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -992,10 +992,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>5.1</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -1006,8 +1006,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -1017,8 +1017,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -1058,10 +1058,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>5.1</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -1072,8 +1072,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -1083,8 +1083,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -1123,10 +1123,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -1137,8 +1137,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -1148,8 +1148,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
@@ -1188,10 +1188,10 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
       <MinimumRequiredVersion>6.0</MinimumRequiredVersion>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(OutDir)\include
-mkdir $(OutDir)\include\libbdplus
-copy ..\src\libbdplus\bdplus.h $(OutDir)\include\libbdplus
-copy .\src\libbdplus\bdplus-version.h $(OutDir)\include\libbdplus
+      <Command>mkdir "$(OutDir)"\include
+mkdir "$(OutDir)"\include\libbdplus
+copy ..\src\libbdplus\bdplus.h "$(OutDir)"\include\libbdplus
+copy .\src\libbdplus\bdplus-version.h "$(OutDir)"\include\libbdplus
 mkdir $(OutDir)\licenses
 copy ..\COPYING $(OutDir)\licenses\libbdplus.txt</Command>
     </PostBuildEvent>
@@ -1202,8 +1202,8 @@ del ..\config.h
 if exist ..\src\libbdplus\bdplus-version.h (
 del ..\src\libbdplus\bdplus-version.h
 )
-if exist $(OutDir)\include\libbdplus (
-rd /s /q $(OutDir)\include\libbdplus
+if exist "$(OutDir)"\include\libbdplus (
+rd /s /q "$(OutDir)"\include\libbdplus
 cd ../
 cd $(ProjectDir)
 )</Command>
@@ -1213,8 +1213,8 @@ cd $(ProjectDir)
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>force_clean</Outputs>
-      <Command>if exist $(OutDir)\include\libbdplus (
-rmdir /s /q $(OutDir)\include\libbdplus
+      <Command>if exist "$(OutDir)"\include\libbdplus (
+rmdir /s /q "$(OutDir)"\include\libbdplus
 )
 if exist $(OutDir)\licenses\libbdplus.txt (
 del /f /q $(OutDir)\licenses\libbdplus.txt
