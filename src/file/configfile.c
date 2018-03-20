@@ -23,21 +23,16 @@
 
 #include "configfile.h"
 
+#include "file.h"
 #include "dirs.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
 
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-#ifdef _WIN32
-# define mkdir(p,m) win32_mkdir(p)
-#endif
-
 
 #define BDPLUS_DIR "bdplus"
 
@@ -45,41 +40,6 @@
 #define MIN_FILE_SIZE 1
 #define MAX_FILE_SIZE 0xffffff
 
-
-int file_mkpath(const char *path)
-{
-    struct stat s;
-    int result = 1;
-    char *dir = str_dup(path);
-    char *end = dir;
-
-    if (!dir) {
-        return -1;
-    }
-
-    while (*end == '/')
-        end++;
-
-    while ((end = strchr(end, '/'))) {
-        *end = 0;
-
-        if (stat(dir, &s) != 0 || !S_ISDIR(s.st_mode)) {
-            BD_DEBUG(DBG_FILE, "Creating directory %s\n", dir);
-
-            if (mkdir(dir, S_IRWXU|S_IRWXG|S_IRWXO) == -1) {
-                BD_DEBUG(DBG_FILE | DBG_CRIT, "Error creating directory %s\n", dir);
-                result = 0;
-                break;
-            }
-        }
-
-        *end++ = '/';
-    }
-
-    free(dir);
-
-    return result;
-}
 
 char *file_get_cache_dir(void)
 {
@@ -90,9 +50,9 @@ char *file_get_cache_dir(void)
         return NULL;
     }
 
-    dir = str_printf("%s/%s", cache, BDPLUS_DIR);
+    dir = str_printf("%s/%s/", cache, BDPLUS_DIR);
     X_FREE(cache);
-    file_mkpath(dir);
+    file_mkdirs(dir);
 
     return dir;
 }
@@ -100,16 +60,16 @@ char *file_get_cache_dir(void)
 static char *_probe_config_dir(const char *base, const char *vm, const char *file)
 {
     char *dir = str_printf("%s/%s/%s/%s", base, BDPLUS_DIR, vm, file);
-    FILE *fp;
+    BDPLUS_FILE_H *fp;
 
     if (!dir) {
         return NULL;
     }
 
-    fp = fopen(dir, "r");
+    fp = file_open_default()(NULL, dir);
 
     if (fp) {
-        fclose(fp);
+        file_close(fp);
         *(strrchr(dir, '/') + 1) = 0;
         BD_DEBUG(DBG_BDPLUS, "Found VM config from %s\n", dir);
         return dir;
@@ -156,38 +116,36 @@ char *file_get_config_dir(const char *file)
     return NULL;
 }
 
-static char *_load_fp(FILE *fp, uint32_t *p_size)
+static char *_load_fp(BDPLUS_FILE_H *fp, uint32_t *p_size)
 {
     char *data = NULL;
-    long file_size, read_size;
+    int64_t size, read_size;
 
-    fseek(fp, 0, SEEK_END);
-    file_size = ftell(fp);
-    fseek(fp, 0, SEEK_SET);
+    size = file_size(fp);
 
-    if (file_size < MIN_FILE_SIZE || file_size > MAX_FILE_SIZE) {
+    if (size < MIN_FILE_SIZE || size > MAX_FILE_SIZE) {
         BD_DEBUG(DBG_FILE, "Invalid file size\n");
         return NULL;
     }
 
-    data      = malloc(file_size + 1);
+    data      = malloc(size + 1);
     if (!data) {
         BD_DEBUG(DBG_FILE, "Out of memory\n");
         return NULL;
     }
 
-    read_size = fread(data, 1, file_size, fp);
+    read_size = file_read(fp, (void *)data, size);
 
-    if (read_size != file_size) {
+    if (read_size != size) {
         BD_DEBUG(DBG_FILE, "Error reading file\n");
         free(data);
         return NULL;
     }
 
-    data[file_size] = 0;
+    data[size] = 0;
 
     if (p_size) {
-        *p_size = file_size;
+        *p_size = size;
     }
 
     return data;
@@ -196,13 +154,13 @@ static char *_load_fp(FILE *fp, uint32_t *p_size)
 char *file_load(const char *path, uint32_t *p_size)
 {
     char *mem;
-    FILE *fp;
+    BDPLUS_FILE_H *fp;
 
     if (!path) {
         return NULL;
     }
 
-    fp = fopen(path, "rb");
+    fp = file_open_default()(NULL, path);
 
     if (!fp) {
         BD_DEBUG(DBG_FILE | DBG_CRIT, "Error loading %s\n", path);
@@ -211,7 +169,7 @@ char *file_load(const char *path, uint32_t *p_size)
 
     mem = _load_fp(fp, p_size);
 
-    fclose(fp);
+    file_close(fp);
 
     return mem;
 }

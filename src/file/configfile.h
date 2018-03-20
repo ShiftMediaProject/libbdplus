@@ -25,8 +25,6 @@
 #include <stdint.h>
 #include <stdio.h>
 
-BD_PRIVATE int          file_mkpath(const char *path);
-
 BD_PRIVATE char *       file_get_cache_dir(void) BD_ATTR_MALLOC;
 BD_PRIVATE char *       file_get_config_dir(const char *file) BD_ATTR_MALLOC;
 

@@ -74,7 +74,7 @@ char *bdplus_disc_cache_file(bdplus_t *plus, const char *file)
     str_print_hex(vid_str, plus->volumeID, 16);
     result = str_printf("%s/%s/%s", base ? base : "/tmp/", vid_str, file);
     X_FREE(base);
-    file_mkpath(result);
+    file_mkdirs(result);
     return result;
 }
 

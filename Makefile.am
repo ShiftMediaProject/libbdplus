@@ -40,8 +40,8 @@ libbdplus_la_SOURCES=\
 	src/libbdplus/bdsvm/sha1.c \
 	src/file/dirs.h \
 	src/file/file.h \
+	src/file/file.c \
 	src/file/filesystem.h \
-	src/file/file_default.c \
 	src/file/file_default.h \
 	src/file/configfile.c \
 	src/file/configfile.h \
@@ -65,6 +65,14 @@ else
 libbdplus_la_SOURCES+= \
 	src/file/dirs_xdg.c
 endif
+endif
+
+if HAVE_WIN32
+libbdplus_la_SOURCES+= \
+	src/file/file_win32.c
+else
+libbdplus_la_SOURCES+= \
+	src/file/file_posix.c
 endif
 
 pkginclude_HEADERS = \

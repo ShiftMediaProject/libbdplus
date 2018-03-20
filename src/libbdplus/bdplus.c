@@ -36,7 +36,7 @@
 #include "util/mutex.h"
 #include "util/strutl.h"
 #include "file/configfile.h"
-#include "file/file_default.h"
+#include "file/file.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -114,7 +114,7 @@ static void _save_slots(bdplus_t *plus)
 {
     char *file_name = _slots_file();
     if (file_name) {
-        file_mkpath(file_name);
+        file_mkdirs(file_name);
         bdplus_save_slots(plus, file_name);
         X_FREE(file_name);
     }
@@ -164,7 +164,7 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
             return NULL;
         }
         plus->config->fopen_handle = plus->device_path;
-        plus->config->fopen        = file_open_default;
+        plus->config->fopen        = file_open_default();
     }
 
     plus->mutex     = calloc(1, sizeof(BD_MUTEX));

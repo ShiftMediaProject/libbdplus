@@ -35,25 +35,45 @@
 # define DIR_SEP_CHAR '/'
 #endif
 
+typedef BDPLUS_FILE_H BD_FILE_H;
+typedef BDPLUS_FILE_OPEN BD_FILE_OPEN;
+
 /*
  * file access
  */
 
-static inline void file_close(BDPLUS_FILE_H *fp)
+static inline void file_close(BD_FILE_H *fp)
 {
     fp->close(fp);
 }
 
-static inline BD_USED int64_t file_seek(BDPLUS_FILE_H *fp, int64_t offset, int32_t origin)
+static inline int64_t file_tell(BD_FILE_H *fp)
+{
+    return fp->tell(fp);
+}
+
+static inline BD_USED int64_t file_seek(BD_FILE_H *fp, int64_t offset, int32_t origin)
 {
     return fp->seek(fp, offset, origin);
 }
 
-static inline BD_USED size_t file_read(BDPLUS_FILE_H *fp, uint8_t *buf, size_t size)
+static inline BD_USED size_t file_read(BD_FILE_H *fp, uint8_t *buf, size_t size)
 {
     return (size_t)fp->read(fp, buf, (int64_t)size);
 }
 
 #define file_open(cfg, fname) (cfg->fopen(cfg->fopen_handle, fname))
+
+BD_PRIVATE int64_t file_size(BD_FILE_H *fp);
+
+BD_PRIVATE BDPLUS_FILE_OPEN file_open_default(void);
+
+/*
+ * local filesystem
+ */
+
+BD_PRIVATE int file_path_exists(const char *path);
+BD_PRIVATE int file_mkdir(const char *dir);
+BD_PRIVATE int file_mkdirs(const char *path);
 
 #endif /* FILE_H_ */
