@@ -120,6 +120,19 @@ static void _save_slots(bdplus_t *plus)
     }
 }
 
+static BD_FILE_H *_file_open_default(void *handle, const char *name)
+{
+    BD_FILE_H *f = NULL;
+    char *full_name;
+
+    full_name = str_printf("%s" DIR_SEP "%s", (const char *)handle, name);
+    if (full_name)
+        f = file_open_default()(NULL, full_name);
+    X_FREE(full_name);
+
+    return f;
+}
+
 bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *vid)
 {
     bdplus_t *plus = NULL;
@@ -164,7 +177,7 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
             return NULL;
         }
         plus->config->fopen_handle = plus->device_path;
-        plus->config->fopen        = file_open_default();
+        plus->config->fopen        = _file_open_default;
     }
 
     plus->mutex     = calloc(1, sizeof(BD_MUTEX));

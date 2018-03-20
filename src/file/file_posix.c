@@ -115,7 +115,8 @@ static BD_FILE_H *_file_open(void *handle, const char* filename)
     flags |= O_BINARY;
 #endif
 
-    if ((fd = open(filename, flags, mode)) < 0) {
+    fd = open(filename, flags, mode);
+    if (fd < 0) {
         BD_DEBUG(DBG_FILE, "Error opening file %s\n", filename);
         return NULL;
     }
