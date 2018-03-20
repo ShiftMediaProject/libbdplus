@@ -74,6 +74,7 @@ static inline void STORE8(void *pv, uint64_t v) {
   STORE4(p,     v >> 32);
 }
 
+#define BD_MAX_SSIZE ((int64_t)(((size_t)-1)>>1))
 
 /*
  * automatic cast from void* (malloc/calloc/realloc)
