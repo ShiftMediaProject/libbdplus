@@ -163,6 +163,8 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
         return NULL;
     }
 
+    bd_mutex_init(&plus->mutex);
+
     plus->free_slot = BDPLUS_NUM_SLOTS-1;
 
     // What is this really?
@@ -179,14 +181,6 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
         plus->config->fopen_handle = plus->device_path;
         plus->config->fopen        = _file_open_default;
     }
-
-    plus->mutex     = calloc(1, sizeof(BD_MUTEX));
-    if (!plus->mutex) {
-        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
-        bdplus_free(plus);
-        return NULL;
-    }
-    bd_mutex_init(plus->mutex);
 
     if (plus->config->fopen) {
         if (_load_svm(plus) < 0) {
@@ -230,7 +224,7 @@ int32_t bdplus_start(bdplus_t *plus)
         return -1;
     }
 
-    bd_mutex_lock(plus->mutex);
+    bd_mutex_lock(&plus->mutex);
 
     BD_DEBUG(DBG_BDPLUS, "[bdplus] running VM for conv_table...\n");
     // FIXME: Run this as separate thread?
@@ -238,7 +232,7 @@ int32_t bdplus_start(bdplus_t *plus)
 
     plus->started = 1;
 
-    bd_mutex_unlock(plus->mutex);
+    bd_mutex_unlock(&plus->mutex);
 
     return result;
 }
@@ -252,9 +246,7 @@ void bdplus_free(bdplus_t *plus)
         return;
     }
 
-    if (plus->mutex) {
-        bd_mutex_lock(plus->mutex);
-    }
+    bd_mutex_lock(&plus->mutex);
 
     if (plus->started) {
         bdplus_run_shutdown(plus);
@@ -284,11 +276,8 @@ void bdplus_free(bdplus_t *plus)
 
     bdplus_config_free(&plus->config);
 
-    if (plus->mutex) {
-        bd_mutex_unlock(plus->mutex);
-        bd_mutex_destroy(plus->mutex);
-        X_FREE(plus->mutex);
-    }
+    bd_mutex_unlock(&plus->mutex);
+    bd_mutex_destroy(&plus->mutex);
 
     X_FREE(plus);
 }
@@ -299,11 +288,11 @@ bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 
     if (!plus) return NULL;
 
-    bd_mutex_lock(plus->mutex);
+    bd_mutex_lock(&plus->mutex);
 
     if (!plus->conv_tab) {
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
-        bd_mutex_unlock(plus->mutex);
+        bd_mutex_unlock(&plus->mutex);
         return NULL;
     }
 
@@ -311,7 +300,7 @@ bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 
     bdplus_st_t *st = segment_set_m2ts(plus->conv_tab, m2ts);
 
-    bd_mutex_unlock(plus->mutex);
+    bd_mutex_unlock(&plus->mutex);
 
     return st;
 }
@@ -432,11 +421,11 @@ int32_t bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, uint32_t p
 
       if (!plus) return -1;
 
-      bd_mutex_lock(plus->mutex);
+      bd_mutex_lock(&plus->mutex);
 
       ret = _bdplus_event(plus, event, param1, param2);
 
-      bd_mutex_unlock(plus->mutex);
+      bd_mutex_unlock(&plus->mutex);
 
       return ret;
  }

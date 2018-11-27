@@ -55,7 +55,7 @@ struct bdplus_s {
 
     struct bdplus_config_s *config;
 
-    BD_MUTEX *mutex;
+    BD_MUTEX  mutex;
 
     uint8_t   loaded;
     uint8_t   started;
