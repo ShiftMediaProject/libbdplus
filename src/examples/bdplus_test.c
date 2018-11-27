@@ -106,6 +106,10 @@ int main(int argc, char **argv)
     if (argc < 3) {
       _libaacs_get_vid(vid, mk, argv[1]);
     } else {
+        if (strlen(argv[2]) != 32) {
+            fprintf(stderr, "invalid VID (should be 32 chars)\n");
+            exit(1);
+        }
         for (ii = 0; ii < 16; ii++) {
             vid[ii] = (_hex_byte(argv[2][2*ii]) << 4) | _hex_byte(argv[2][2*ii + 1]);
         }
