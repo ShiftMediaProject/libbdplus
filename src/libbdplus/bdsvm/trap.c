@@ -1129,6 +1129,8 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
             break;
         } // qID
 
+        break;
+
     default:
         BD_DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for unknown dev %d: %d\n", dev, qID);
         break;
