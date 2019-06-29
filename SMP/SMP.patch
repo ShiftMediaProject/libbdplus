@@ -1,0 +1,25 @@
+diff --git a/src/util/attributes.h b/src/util/attributes.h
+index 9aa84d8..4f30632 100644
+--- a/src/util/attributes.h
++++ b/src/util/attributes.h
+@@ -50,7 +50,7 @@
+ #    define BD_PRIVATE
+ #endif
+ 
+-#if !defined(__GNUC__) || __GNUC__ < 3
++#if ( !defined(__GNUC__) || __GNUC__ < 3 ) && !defined(__INTEL_COMPILER)
+ #  define BD_LIKELY(x)   (x)
+ #  define BD_UNLIKELY(x) (x)
+ #else
+diff --git a/src/util/mutex.h b/src/util/mutex.h
+index 6c19704..627ca85 100644
+--- a/src/util/mutex.h
++++ b/src/util/mutex.h
+@@ -25,6 +25,7 @@
+ #endif
+ 
+ #if defined(_WIN32)
++#   define WIN32_LEAN_AND_MEAN
+ #   include <windows.h>
+ #elif defined(HAVE_PTHREAD_H)
+ #   include <pthread.h>
