@@ -52,6 +52,7 @@ struct bdplus_s {
     uint8_t  mediaKey[BLURAY_VOLUMEID_LEN]; // This should probably be moved out,API?
 
     struct conv_table_s *conv_tab;
+    struct conv_table_s *cache_tab;
 
     struct bdplus_config_s *config;
 

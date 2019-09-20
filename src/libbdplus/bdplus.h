@@ -72,6 +72,9 @@ int32_t bdplus_get_code_gen(bdplus_t *plus);
 BD_PUBLIC
 int32_t bdplus_get_code_date(bdplus_t *plus);
 
+BD_PUBLIC
+int32_t bdplus_is_cached(bdplus_t *plus);
+
 
 /*
  * Release the bdplus library.

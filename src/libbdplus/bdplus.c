@@ -89,6 +89,14 @@ int32_t bdplus_get_code_date(bdplus_t *plus)
     return plus->date;
 }
 
+int32_t bdplus_is_cached(bdplus_t *plus)
+{
+    if (!plus) return -1;
+    if (!plus->started) return -1;
+
+    return plus->cache_tab != NULL;
+}
+
 
 static char *_slots_file(void)
 {
@@ -232,6 +240,20 @@ int32_t bdplus_start(bdplus_t *plus)
 
     plus->started = 1;
 
+    const char *cachefile = getenv("BDPLUS_CONVTAB");
+    if (cachefile && !plus->cache_tab) {
+        FILE *fp = fopen(cachefile, "rb");
+        if (fp) {
+            conv_table_t *ct = NULL;
+            BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] loading cached conversion table...\n");
+            if(segment_load(&ct, fp) == 1) {
+                segment_activateTable(ct);
+                plus->cache_tab = ct;
+            }
+            fclose(fp);
+        }
+    }
+
     bd_mutex_unlock(&plus->mutex);
 
     return result;
@@ -271,6 +293,9 @@ void bdplus_free(bdplus_t *plus)
         }
         segment_freeTable(&plus->conv_tab);
     }
+    if (plus->cache_tab) {
+        segment_freeTable(&plus->cache_tab);
+    }
 
     X_FREE(plus->device_path);
 
@@ -284,12 +309,22 @@ void bdplus_free(bdplus_t *plus)
 
 bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 {
+    bdplus_st_t *st;
+
     BD_DEBUG(DBG_BDPLUS, "[bdplus] set_m2ts %p -> %u\n", plus, m2ts);
 
     if (!plus) return NULL;
 
     bd_mutex_lock(&plus->mutex);
 
+    if (plus->cache_tab) {
+
+        st = segment_set_m2ts(plus->cache_tab, m2ts);
+        if (st) {
+            BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] using cached conversion table for %05u.m2ts\n", m2ts);
+        }
+
+    } else {
     if (!plus->conv_tab) {
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
         bd_mutex_unlock(&plus->mutex);
@@ -298,7 +333,8 @@ bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 
     bdplus_run_m2ts(plus, m2ts);
 
-    bdplus_st_t *st = segment_set_m2ts(plus->conv_tab, m2ts);
+    st = segment_set_m2ts(plus->conv_tab, m2ts);
+    }
 
     bd_mutex_unlock(&plus->mutex);
 
@@ -383,6 +419,10 @@ static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, ui
         /* this event is used when disc is played without menus. */
         /* try to emulate player to get converson table. */
         BD_DEBUG(DBG_BDPLUS, "[bdplus] received CONVERSION TABLE event\n");
+
+        if (plus->cache_tab) {
+            return 0;
+        }
 
         unsigned int num_titles = param2;
 

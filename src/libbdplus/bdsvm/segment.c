@@ -548,7 +548,37 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
 }
 
 
+//
+// Activates a table. This is usefull if a cached convtab.bin file is being used.
+// Sets all segements as decrypted and all entries as active
+int32_t segment_activateTable(conv_table_t *conv_tab)
+{
+    uint32_t table, currseg, currentry;
+    subtable_t *subtable = NULL;
+    segment_t *segment = NULL;
+    entry_t *entry = NULL;
 
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] activating conv_tab.bin\n");
+
+    for (table = 0; table < conv_tab->numTables; table++) {
+
+        // Assign pointer so we don't need to keep dereferencing
+        subtable = &conv_tab->Tables[ table ];
+
+        //set all segments as decrypted
+        for (currseg = 0; currseg < subtable->numSegments; currseg++) {
+            segment = &subtable->Segments[ currseg ];
+            segment->encrypted = 0;
+
+            //set all entries as active
+            for (currentry = 0; currentry < segment->numEntries; currentry++) {
+                entry = &segment->Entries[ currentry ];
+                entry->active = 1;
+            }
+        }
+    }
+    return 0;
+}
 
 
 //
@@ -726,6 +756,30 @@ static int segment_sortby_tableid(const void *a1, const void *a2)
     return 0;
 }
 
+
+int32_t segment_load(conv_table_t **conv_tab, FILE *fd)
+{
+    uint32_t fileLen;
+    uint32_t len;
+    uint8_t *buffer = NULL;
+
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] loading cached convTable file\n");
+    fseek(fd, 0L, SEEK_END);
+    fileLen=ftell(fd);
+    rewind(fd);
+    buffer=(uint8_t *)malloc(fileLen+1);
+    len=fread(buffer, fileLen, 1, fd);
+
+    // Save the table to VM
+    if (len) {
+        // Decode the table into C structures.
+        segment_setTable(conv_tab, buffer, fileLen);
+        X_FREE(buffer);
+
+        if(conv_tab) return 1;
+    }
+    return 0;
+}
 
 
 int32_t segment_save(conv_table_t *ct, FILE *fd)
