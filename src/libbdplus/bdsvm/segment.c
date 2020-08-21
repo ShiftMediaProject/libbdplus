@@ -97,7 +97,7 @@ typedef struct entry_s entry_t;
 
 struct segment_s {
     uint32_t encrypted;
-    uint32_t offset;
+  //uint32_t offset;
     uint32_t numEntries;
     entry_t *Entries;
 
@@ -211,6 +211,9 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
     for (table = 0; table < ct->numTables; table++) {
 
+        if (len < 6 || ptr > len - 6)
+            goto error;
+
         // Assign pointer so we don't need to keep dereferencing
         subtable = &ct->Tables[ table ];
 
@@ -236,10 +239,16 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
              currseg < subtable->numSegments;
              currseg++) {
 
+            if (ptr + currseg * 4 > len - 4)
+                goto error;
+
             segment = &subtable->Segments[ currseg ];
 
             offset = FETCH4(&Table[ptr + (currseg * 4) ]);
-            segment->offset = offset;  // not really used
+            //segment->offset = offset;  // not really used
+
+            if (offset > len - 4)
+                goto error;
 
             segment->numEntries = FETCH4(&Table[offset]);
             offset += 4;
@@ -259,6 +268,10 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
             // First read in the index table
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
+
+                if (offset > len - 4)
+                    goto error;
+
                 entry = &segment->Entries[ currentry ];
 
                 entry->index = FETCH4(&Table[offset]);
@@ -268,6 +281,9 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
             // Now read in the data.
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
                 entry = &segment->Entries[ currentry ];
+
+                if (len < 16 || offset > len - 16)
+                    goto error;
 
                 entry->flags = Table[ offset ];
                 offset += 1;
