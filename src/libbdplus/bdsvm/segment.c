@@ -179,7 +179,8 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     uint32_t offset = 0;
     uint32_t encrypted_segments = 0;
 
-    if (!Table || !len) return -1;
+    if (!Table || len < 2) return -1;
+    if (len > 0x400000) return -1; /* VM memory size */
 
 
     BD_DEBUG(DBG_BDPLUS,"[segment] Starting decode of conv_tab.bin: %p (%d)\n", Table, len);
