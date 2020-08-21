@@ -361,11 +361,13 @@ int32_t segment_freeTable(conv_table_t **Table)
 
     ct = *Table;
 
+    if (ct->Tables)
     for (table = 0; table < ct->numTables; table++) {
 
         // Assign pointer so we don't need to keep dereferencing
         subtable = &ct->Tables[ table ];
 
+        if (subtable->Segments)
         for (currseg = 0; currseg < subtable->numSegments; currseg++) {
 
             segment = &subtable->Segments[ currseg ];
