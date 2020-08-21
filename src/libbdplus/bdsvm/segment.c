@@ -217,10 +217,8 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
     // Allocate area to hold all subtable structs, if not already allocated
     if (!ct->Tables) {
-        ct->Tables = (subtable_t *) malloc(sizeof(subtable_t) * ct->numTables);
+        ct->Tables = (subtable_t *) calloc(ct->numTables, sizeof(subtable_t));
         if (!ct->Tables) return segment_freeTable(conv_tab);
-        memset(ct->Tables,
-               0, sizeof(subtable_t) * numTables);
     }
 
 
@@ -263,12 +261,8 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
         // Allocate area if required
         if (!subtable->Segments) {
-            subtable->Segments = (segment_t *) malloc(sizeof(segment_t) *
-                                                      numSegments);
+            subtable->Segments = (segment_t *)calloc(numSegments, sizeof(segment_t));
             if (!subtable->Segments) continue;
-            memset(subtable->Segments, 0,
-                   sizeof(segment_t) *
-                   numSegments);
         }
 
 
@@ -291,16 +285,12 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
             BD_DEBUG(DBG_BDPLUS,"   Segment %d offset %08X -> %d entries\n",
                    currseg, offset-4, segment->numEntries);
 
-            segment->Entries = (entry_t *) malloc(sizeof(entry_t) *
-                                                  segment->numEntries);
+            segment->Entries = (entry_t *) calloc(segment->numEntries, sizeof(entry_t));
             if (!segment->Entries) continue;
 
             // If we have non-zero entries, assume they are encrypted
             segment->encrypted = 1;
             encrypted_segments++;
-
-            memset(segment->Entries, 0, sizeof(entry_t) *
-                   segment->numEntries);
 
             // First read in the index table
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
