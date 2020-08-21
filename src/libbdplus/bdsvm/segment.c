@@ -169,7 +169,7 @@ uint32_t segment_numEntries(conv_table_t *ct)
 
 int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 {
-    uint32_t numTables, table, currseg, currentry;
+    uint32_t table, currseg, currentry;
     uint32_t tmp;
     conv_table_t *ct;
     subtable_t *subtable;
@@ -194,9 +194,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
 
     // Update the number of tables we received
-    numTables = FETCHU2(&Table[ptr]);
-
-    ct->numTables = numTables;
+    ct->numTables = FETCHU2(&Table[ptr]);
     ptr += 2;
 
     // Let nextSegment() initialise these, So that we can ignore
@@ -208,40 +206,33 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     if (!ct->Tables) goto error;
 
 
-    BD_DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", numTables);
+    BD_DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", ct->numTables);
 
-    for (table = 0; table < numTables; table++) {
-        uint32_t tableID;
-        uint32_t numSegments;
+    for (table = 0; table < ct->numTables; table++) {
 
         // Assign pointer so we don't need to keep dereferencing
         subtable = &ct->Tables[ table ];
 
-        tableID = FETCH4(&Table[ptr]);
+        subtable->tableID = FETCH4(&Table[ptr]);
         ptr += 4;
-
-        subtable->tableID = tableID;
 
         // Here, we might increase the number of segments.
 
-        //subtable->numSegments = FETCHU2(&Table[ptr]);
-        numSegments = FETCHU2(&Table[ptr]);
+        subtable->numSegments = FETCHU2(&Table[ptr]);
         ptr += 2;
 
         // Don't allocate if no (new) segments
-        if (!numSegments) continue;
-
-        subtable->numSegments = numSegments;
+        if (!subtable->numSegments) continue;
 
         BD_DEBUG(DBG_BDPLUS,"[segment] Table %d ID %08X, %u segments\n",
                table, subtable->tableID, subtable->numSegments);
 
-        subtable->Segments = (segment_t *) calloc(numSegments, sizeof(segment_t));
+        subtable->Segments = (segment_t *) calloc(subtable->numSegments, sizeof(segment_t));
         if (!subtable->Segments) goto error;
 
         // Loop on all segments
         for (currseg = 0;
-             currseg < numSegments;
+             currseg < subtable->numSegments;
              currseg++) {
 
             segment = &subtable->Segments[ currseg ];
