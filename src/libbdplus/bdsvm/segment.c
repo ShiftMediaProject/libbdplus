@@ -383,6 +383,8 @@ int32_t segment_freeTable(conv_table_t **Table)
     X_FREE(ct->Tables);
     ct->numTables = 0;
 
+    X_FREE(ct);
+
     *Table = NULL;
 
     return 0;
