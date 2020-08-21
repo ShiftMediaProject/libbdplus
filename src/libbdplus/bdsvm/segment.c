@@ -184,28 +184,17 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 
     BD_DEBUG(DBG_BDPLUS,"[segment] Starting decode of conv_tab.bin: %p (%d)\n", Table, len);
 
-    ct = *conv_tab;
-
-
-    // If we do not already have a conv_tab, allocate it.
-    if (!ct) {
-
-        ct = (conv_table_t *) malloc(sizeof(*ct));
-        if (!ct) return -2;
-
-        memset(ct, 0, sizeof(*ct));
-
-        *conv_tab = ct;
-
+    if (*conv_tab) {
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[segment] ERROR: Table already exists.\n");
+        return -1;
     }
+
+    ct = (conv_table_t *) calloc(1, sizeof(*ct));
+    if (!ct) return -2;
 
 
     // Update the number of tables we received
     numTables = FETCHU2(&Table[ptr]);
-
-    if (ct->numTables && (ct->numTables != numTables)) {
-        BD_DEBUG(DBG_BDPLUS,"[segment] Warning, numTables changed between conv_tab parts!\n");
-    }
 
     ct->numTables = numTables;
     ptr += 2;
@@ -215,11 +204,8 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     ct->current_table   = 0xffffffff;
     ct->current_segment = 0xffffffff;
 
-    // Allocate area to hold all subtable structs, if not already allocated
-    if (!ct->Tables) {
-        ct->Tables = (subtable_t *) calloc(ct->numTables, sizeof(subtable_t));
-        if (!ct->Tables) return segment_freeTable(conv_tab);
-    }
+    ct->Tables = (subtable_t *) calloc(ct->numTables, sizeof(subtable_t));
+    if (!ct->Tables) goto error;
 
 
     BD_DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", numTables);
@@ -234,10 +220,6 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
         tableID = FETCH4(&Table[ptr]);
         ptr += 4;
 
-        if (subtable->tableID && (subtable->tableID != tableID)) {
-            BD_DEBUG(DBG_BDPLUS,"[segment] Warning: tableID changed %08X != %08X\n",
-                   subtable->tableID, tableID);
-        }
         subtable->tableID = tableID;
 
         // Here, we might increase the number of segments.
@@ -249,22 +231,13 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
         // Don't allocate if no (new) segments
         if (!numSegments) continue;
 
-        if (subtable->numSegments && (subtable->numSegments != numSegments)) {
-            BD_DEBUG(DBG_BDPLUS,"[segment] Warning: numSegments changed %08X != %08X\n",
-                   subtable->numSegments, numSegments);
-        }
-
         subtable->numSegments = numSegments;
 
         BD_DEBUG(DBG_BDPLUS,"[segment] Table %d ID %08X, %u segments\n",
                table, subtable->tableID, subtable->numSegments);
 
-        // Allocate area if required
-        if (!subtable->Segments) {
-            subtable->Segments = (segment_t *)calloc(numSegments, sizeof(segment_t));
-            if (!subtable->Segments) continue;
-        }
-
+        subtable->Segments = (segment_t *) calloc(numSegments, sizeof(segment_t));
+        if (!subtable->Segments) goto error;
 
         // Loop on all segments
         for (currseg = 0;
@@ -286,7 +259,7 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
                    currseg, offset-4, segment->numEntries);
 
             segment->Entries = (entry_t *) calloc(segment->numEntries, sizeof(entry_t));
-            if (!segment->Entries) continue;
+            if (!segment->Entries) goto error;
 
             // If we have non-zero entries, assume they are encrypted
             segment->encrypted = 1;
@@ -335,7 +308,13 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     BD_DEBUG(DBG_BDPLUS,"[segments] Done parsing. %d segments need decrypting.\n",
            encrypted_segments);
 
+    *conv_tab = ct;
     return ct->numTables;
+
+ error:
+    BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[segments] Conversion table parsing failed.\n");
+    segment_freeTable(&ct);
+    return -1;
 }
 
 
