@@ -60,6 +60,7 @@ int main(int argc, char **argv)
     uint32_t numTables, table;
     uint32_t ptr = 0;
     uint32_t offset = 0;
+    int errors = 0;
 
     if (argc < 2) {
         fprintf(stderr, "%s /path/to/conv_tab.bin\n", argv[0]);
@@ -89,6 +90,7 @@ int main(int argc, char **argv)
 
         for (segment = 0; segment < numSegments; segment++) {
             uint32_t numEntries, entry;
+            uint64_t prev_off1 = 0;
 
             offset = FETCH4(&tab[ptr + (segment * 4) ]);
 
@@ -143,6 +145,31 @@ int main(int argc, char **argv)
                 printf("    %08X %08X:  %02X %02X %02X %02X %02X\n",
                        (uint32_t)(off1 >> 32), (uint32_t)(off1 & 0xffffffff),
                        patch1[0], patch1[1], patch1[2], patch1[3], patch1[4]);
+
+                if ((flags >> 6) == 3) {
+                    printf("    *** invalid flags ***\n");
+                    errors++;
+                }
+                if ((flags >> 6) == 1) {
+                    if (patch0_buffer_offset < 8 || patch1_buffer_offset < 8) {
+                        printf("    *** Invalid in-packet offset (inside ts header) ***\n");
+                        errors++;
+                    }
+                    if (patch0_buffer_offset > 187 || patch1_buffer_offset > 187) {
+                        printf("    *** Invalid in-packet offset (overwrite) ***\n");
+                        errors++;
+                    }
+                    if (off0 >= off1) {
+                        printf("   *** invalid offset (off0 >= off1) ***\n");
+                        errors++;
+                    }
+                    if (off0 < prev_off1) {
+                        printf("    *** invalid offset sequence (not monotonic) ***\n");
+                        errors++;
+                    }
+                    prev_off1 = off1;
+                }
+
             } // for entry
 
         } // for segment
@@ -151,5 +178,5 @@ int main(int argc, char **argv)
 
     } // for table
 
-    return 0;
+    return errors;
 }

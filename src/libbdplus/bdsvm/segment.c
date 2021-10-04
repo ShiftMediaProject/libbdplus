@@ -147,6 +147,70 @@ struct bdplus_st_s {
  *
  */
 
+static int64_t _entry_offset0(const entry_t *e)
+{
+    return (((uint64_t)e->index +
+             (uint64_t)e->patch0_address_adjust) *
+            (uint64_t)0xC0 +
+            (uint64_t)e->patch0_buffer_offset);
+}
+
+static int64_t _entry_offset1(const entry_t *e)
+{
+    return (( (uint64_t)e->index +
+              (uint64_t)e->patch0_address_adjust +
+              (uint64_t)e->patch1_address_adjust) *
+            (uint64_t)0xC0 +
+            (uint64_t)e->patch1_buffer_offset);
+}
+
+static int _is_invalid_entry(const entry_t *e, const entry_t *prev)
+{
+    unsigned invalid = 0;
+
+    /*
+      Do some basic sanity checks for conversion table entry.
+      Note: Following checks are incomplete. The idea is to catch tables with
+      random or encrypted data. This works quite well because of there are
+      thousands of entries in the table.
+
+      Checks could be improved a lot if we parse also .clpi file and the stream.
+    */
+
+    if ((e->flags >> 6) == 3) {
+        BD_DEBUG(DBG_BDPLUS, "[segment] invalid flags in entry.\n");
+        return 1;
+    }
+
+    /* Check only unconditionally applied entries. */
+    /* Inactive entries are most likely filled with random data to secure the key. */
+    if ((e->flags >> 6) == 1) {
+        if (e->patch0_buffer_offset < 8 || e->patch0_buffer_offset > 187 ||
+            e->patch1_buffer_offset < 8 || e->patch1_buffer_offset > 187) {
+
+            /* - too easy to reconstruct, would compromize segment key */
+            /* - ATC is used to control buffering and disk spinning at _lower_ layers */
+            /* - not user-visible, useless for watermarking. */
+            BD_DEBUG(DBG_BDPLUS, "[segment] invalid patch buffer offsets in entry.\n");
+            invalid = 1;
+        }
+        if (_entry_offset0(e) >= _entry_offset1(e) ||
+            ( prev && (prev->flags >> 6) == 1 &&
+              _entry_offset0(e) < _entry_offset1(prev))) {
+
+            /* tables are always sorted */
+            BD_DEBUG(DBG_BDPLUS, "[segment] invalid offset in entry.\n");
+            invalid = 1;
+        }
+    }
+
+    return invalid;
+}
+
+/*
+ *
+ */
+
 uint32_t segment_numTables(conv_table_t *ct)
 {
     return ct ? ct->numTables : 0;
@@ -166,6 +230,25 @@ uint32_t segment_numEntries(conv_table_t *ct)
 
     return entries;
 }
+
+static int32_t segment_validateTable(conv_table_t *ct)
+{
+    uint32_t table, currseg, currentry;
+    int errors = 0;
+
+    for (table = 0; table < ct->numTables; table++) {
+        subtable_t *subtable = &ct->Tables[ table ];
+        for (currseg = 0; currseg < subtable->numSegments; currseg++) {
+            segment_t *segment = &subtable->Segments[ currseg ];
+            for (currentry = 0; currentry < segment->numEntries; currentry++) {
+                entry_t *entry = &segment->Entries[ currentry ];
+                errors += _is_invalid_entry(entry, currentry == 0 ? NULL : (entry - 1));
+            }
+        }
+    }
+    return errors;
+}
+
 
 int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 {
@@ -774,9 +857,17 @@ int32_t segment_load(conv_table_t **conv_tab, FILE *fd)
     if (len) {
         // Decode the table into C structures.
         segment_setTable(conv_tab, buffer, fileLen);
-        X_FREE(buffer);
+    }
 
-        if(conv_tab) return 1;
+    X_FREE(buffer);
+
+    if (*conv_tab) {
+        int errors = segment_validateTable(*conv_tab);
+        if (errors == 0) {
+            return 1;
+        }
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] dropping broken cached conversion table (%d invalid entries).\n", errors);
+        segment_freeTable(conv_tab);
     }
     return 0;
 }
