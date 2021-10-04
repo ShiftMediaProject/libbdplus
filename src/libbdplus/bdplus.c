@@ -224,6 +224,7 @@ void bdplus_set_mk(bdplus_t *plus, const uint8_t *mk)
 
 int32_t bdplus_start(bdplus_t *plus)
 {
+    char *cachefile = NULL;
     int32_t result = 0;
 
     if (!plus) return -1;
@@ -240,7 +241,11 @@ int32_t bdplus_start(bdplus_t *plus)
 
     plus->started = 1;
 
-    const char *cachefile = getenv("BDPLUS_CONVTAB");
+    cachefile = str_dup(getenv("BDPLUS_CONVTAB"));
+
+    if (!cachefile)
+        cachefile = bdplus_disc_findcachefile(plus);
+
     if (cachefile && !plus->cache_tab) {
         FILE *fp = fopen(cachefile, "rb");
         if (fp) {
@@ -254,11 +259,12 @@ int32_t bdplus_start(bdplus_t *plus)
         }
     }
 
+    X_FREE(cachefile);
+
     bd_mutex_unlock(&plus->mutex);
 
     return result;
 }
-
 
 void bdplus_free(bdplus_t *plus)
 {

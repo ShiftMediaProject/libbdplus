@@ -28,11 +28,13 @@
 #include "bdsvm/segment.h"
 
 #include "file/configfile.h"
+#include "file/dirs.h"
 #include "file/file.h"
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
 
+#include <ctype.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -64,6 +66,103 @@ int crypto_init()
   }
 
   return crypto_init_check;
+}
+
+static char *_cache_scanpath(const char *cachepath, const char *mk_str)
+{
+    char             *result = NULL;
+    char             *fullpath = NULL;
+    BD_DIR_H         *dir;
+    BD_DIRENT         ent, entlower;
+    long unsigned int i;
+    size_t            len;
+
+    if(!cachepath)
+        return NULL;
+
+    /* open and scan cachepath for mk_str[.bin] */
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Scanning %s for cached conversion table...\n", cachepath);
+    fullpath = str_printf("%s%s%s", cachepath, DIR_SEP, "convtab");
+    if (fullpath) {
+        dir = dir_open_default()(fullpath);
+
+        if (dir) {
+            while (!result && !dir_read(dir, &ent)) {
+                len = strlen(ent.d_name);
+                /* skip if filename is shorter than 32 chars (ie. 32 hexdigits plus .bin) */
+                if (len < 36)
+                    continue;
+
+                /* create lower-case copy of the filename for comparison */
+                for (i = 0; i < len; i++) {
+                    entlower.d_name[i] = tolower(ent.d_name[i]);
+                }
+
+                /* check if (lowercase) filename contains the MK and ends with .bin, create
+                   result with original-case filename if it matches */
+                if (!memcmp(entlower.d_name, mk_str, 32) && !memcmp(entlower.d_name + len - 4, ".bin", 4))
+                    result = str_printf("%s%s%s", fullpath, DIR_SEP, ent.d_name);
+            }
+            dir_close(dir);
+        }
+        X_FREE(fullpath);
+    }
+
+    return result;
+}
+
+char *bdplus_disc_findcachefile(bdplus_t *plus)
+{
+    char       *cache_home = file_get_cache_dir();
+    char       *config_home = file_get_config_home();
+    const char *sysbase = NULL;
+    char       *syspath = NULL;
+    char       *home_convtab = NULL;
+    char       *result = NULL;
+    char        mk_str[33];
+
+    str_print_hex(mk_str, plus->mediaKey, 16);
+
+    /* Scan home config convtab dir (ie. bdplus/convtab/ */
+    if (config_home) {
+        home_convtab = str_printf("%s%s%s", config_home, DIR_SEP, BDPLUS_DIR);
+        if (home_convtab)
+            result = _cache_scanpath(home_convtab, mk_str);
+
+        X_FREE(home_convtab);
+    }
+
+    /* Scan home cache dir */
+    if (!result && cache_home)
+        result = _cache_scanpath(cache_home, mk_str);
+
+    /* Scan system config dirs (no convtab in cache and home conf dirs) */
+    if (!result) {
+        sysbase = file_get_config_system(NULL);
+        while (sysbase) {
+            syspath = str_printf("%s%s%s", sysbase, DIR_SEP, BDPLUS_DIR);
+            if (syspath)
+                result = _cache_scanpath(syspath, mk_str);
+
+            X_FREE(syspath);
+
+            /* stop iterator if cached convtab was found */
+            if (result)
+                break;
+
+            sysbase = file_get_config_system(sysbase);
+        }
+    }
+
+    if (result)
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Found cached conversion table at %s\n", result);
+    else
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] No cached conversion table found\n");
+
+    X_FREE(config_home);
+    X_FREE(cache_home);
+
+    return result;
 }
 
 char *bdplus_disc_cache_file(bdplus_t *plus, const char *file)
