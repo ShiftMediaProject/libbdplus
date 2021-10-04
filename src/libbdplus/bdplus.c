@@ -325,15 +325,15 @@ bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
         }
 
     } else {
-    if (!plus->conv_tab) {
-        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
-        bd_mutex_unlock(&plus->mutex);
-        return NULL;
-    }
+        if (!plus->conv_tab) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
+            bd_mutex_unlock(&plus->mutex);
+            return NULL;
+        }
 
-    bdplus_run_m2ts(plus, m2ts);
+        bdplus_run_m2ts(plus, m2ts);
 
-    st = segment_set_m2ts(plus->conv_tab, m2ts);
+        st = segment_set_m2ts(plus->conv_tab, m2ts);
     }
 
     bd_mutex_unlock(&plus->mutex);
