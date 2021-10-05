@@ -275,7 +275,7 @@ conv_table_t *bdplus_getConvTable(bdplus_t *plus)
  * conv_tables that are merged).
  *
  */
-int32_t bdplus_run_convtab(bdplus_t *plus, uint32_t num_titles)
+int32_t bdplus_run_convtab(bdplus_t *plus)
 {
     int32_t keep_running, ret;
     uint32_t current_break = 0;

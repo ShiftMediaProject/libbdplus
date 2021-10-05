@@ -75,7 +75,7 @@ BD_PRIVATE int32_t  bdplus_save_slots ( bdplus_t *plus, const char *fname );
 
 BD_PRIVATE int32_t  bdplus_run_init   ( struct VM_s *vm );
 BD_PRIVATE int32_t  bdplus_run_idle   ( struct VM_s *vm );
-BD_PRIVATE int32_t  bdplus_run_convtab( bdplus_t *plus, uint32_t num_titles );
+BD_PRIVATE int32_t  bdplus_run_convtab( bdplus_t *plus );
 BD_PRIVATE int32_t  bdplus_run_title  ( bdplus_t *plus, uint32_t title );
 BD_PRIVATE int32_t  bdplus_run_m2ts   ( bdplus_t *plus, uint32_t m2ts );
 BD_PRIVATE int32_t  bdplus_run_shutdown(bdplus_t *plus );

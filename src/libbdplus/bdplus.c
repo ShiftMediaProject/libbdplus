@@ -424,10 +424,8 @@ static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, ui
             return 0;
         }
 
-        unsigned int num_titles = param2;
-
         bdplus_run_init(plus->vm);
-        return bdplus_run_convtab(plus, num_titles);
+        return bdplus_run_convtab(plus);
     }
 
 
