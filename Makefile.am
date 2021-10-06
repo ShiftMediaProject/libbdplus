@@ -69,9 +69,11 @@ endif
 
 if HAVE_WIN32
 libbdplus_la_SOURCES+= \
+	src/file/dir_win32.c \
 	src/file/file_win32.c
 else
 libbdplus_la_SOURCES+= \
+	src/file/dir_posix.c \
 	src/file/file_posix.c
 endif
 

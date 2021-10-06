@@ -69,6 +69,30 @@ BD_PRIVATE int64_t file_size(BD_FILE_H *fp);
 BD_PRIVATE BDPLUS_FILE_OPEN file_open_default(void);
 
 /*
+ * directory access
+ */
+
+typedef struct
+{
+    char    d_name[256];
+} BD_DIRENT;
+
+typedef struct bdplus_dir_s BD_DIR_H;
+struct bdplus_dir_s
+{
+    void* internal;
+    void (*close)(BD_DIR_H *dir);
+    int (*read)(BD_DIR_H *dir, BD_DIRENT *entry);
+};
+
+typedef BD_DIR_H* (*BD_DIR_OPEN) (const char* dirname);
+
+#define dir_close(X) X->close(X)
+#define dir_read(X,Y) X->read(X,Y)
+
+BD_PRIVATE BD_DIR_OPEN dir_open_default(void);
+
+/*
  * local filesystem
  */
 
