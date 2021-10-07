@@ -34,9 +34,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-#define BDPLUS_DIR "bdplus"
-
-
 #define MIN_FILE_SIZE 1
 #define MAX_FILE_SIZE 0xffffff
 

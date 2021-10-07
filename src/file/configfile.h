@@ -25,6 +25,8 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#define BDPLUS_DIR "bdplus"
+
 BD_PRIVATE char *       file_get_cache_dir(void) BD_ATTR_MALLOC;
 BD_PRIVATE char *       file_get_config_dir(const char *file) BD_ATTR_MALLOC;
 
