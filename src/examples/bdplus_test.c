@@ -98,7 +98,11 @@ int main(int argc, char **argv)
     unsigned ii;
 
     if (argc < 2) {
+#ifndef HAVE_LIBAACS
+        fprintf(stderr, "%s /path/tobluray <VID>\r\n", argv[0]);
+#else
         fprintf(stderr, "%s /path/tobluray [VID]\r\n", argv[0]);
+#endif
         fprintf(stderr, "Where we expect to find /path/tobluray/BDSVM/\r\n");
         exit(1);
     }

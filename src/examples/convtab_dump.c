@@ -68,7 +68,7 @@ int main(int argc, char **argv)
     }
 
     if (_read_tab(argv[1]) < 1) {
-        fprintf(stderr, "Error reading %s\n", argv[0]);
+        fprintf(stderr, "Error reading %s\n", argv[1]);
         exit(1);
     }
 
