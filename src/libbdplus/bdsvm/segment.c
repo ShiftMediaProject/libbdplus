@@ -753,6 +753,7 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
 
     // After decrypting the whole segment, re-parse it to remove any
     // repair descriptors that are "fakes".
+    unsigned logged_flag3 = 0;
     for (currentry = 0;
          currentry < segment->numEntries;
          currentry++) {
@@ -765,14 +766,18 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
         switch((entry->flags>>6) & 0x3) {
 
         case 0:
-            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 0. Don't know what to do\n");
+            /* No transform */
+            //BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 0. Don't know what to do\n");
+            entry->active = 0;
             break;
 
         case 1: // Type 1, always active.
+            /* Transform */
             entry->active = 1;
             break;
 
         case 2: // Type 2, index mask[] to check if active
+            /* Forensic */
             bits = entry->flags & 0x3f; // 6 bits, 0-63
 
             // If set true, it is active, so process next..
@@ -810,7 +815,12 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
             break;
 
         case 3:
-            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 3. Don't know what to do\n");
+            /* Reserved. Table or mask is invalid ? */
+            if (logged_flag3 < 2)
+                BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 3. Don't know what to do\n");
+            else
+                BD_DEBUG(DBG_BDPLUS,"[segment] entry type 3. Don't know what to do\n");
+            logged_flag3++;
             entry->active = 0;
             break;
 
