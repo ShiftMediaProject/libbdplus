@@ -78,7 +78,7 @@ static int64_t _file_read(BD_FILE_H *file, uint8_t *buf, int64_t size)
     ssize_t got, result;
 
     if (size <= 0 || size >= BD_MAX_SSIZE) {
-        BD_DEBUG(DBG_FILE | DBG_CRIT, "Ignoring invalid read of size %"PRId64" (%p)\n", size, (void*)file);
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Ignoring invalid read of size %" PRId64 " (%p)\n", size, (void*)file);
         return 0;
     }
 
