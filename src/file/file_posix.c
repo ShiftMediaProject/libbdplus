@@ -98,6 +98,35 @@ static int64_t _file_read(BD_FILE_H *file, uint8_t *buf, int64_t size)
     return (int64_t)got;
 }
 
+static int64_t _file_write(BD_FILE_H *file, const uint8_t *buf, int64_t size)
+{
+    ssize_t written, result;
+
+    if (size <= 0 || size >= BD_MAX_SSIZE) {
+        if (size == 0) {
+            if (fsync((int)(intptr_t)file->internal)) {
+                BD_DEBUG(DBG_FILE, "fsync() failed (%p)\n", (void*)file);
+                return -1;
+            }
+            return 0;
+        }
+        BD_DEBUG(DBG_FILE | DBG_CRIT, "Ignoring invalid write of size %" PRId64 " (%p)\n", size, (void*)file);
+        return 0;
+    }
+
+    for (written = 0; written < (ssize_t)size; written += result) {
+        result = write((int)(intptr_t)file->internal, buf + written, size - written);
+        if (result < 0) {
+            if (errno != EINTR) {
+                BD_DEBUG(DBG_FILE, "write() failed (%p)\n", (void*)file);
+                break;
+            }
+            result = 0;
+        }
+    }
+    return (int64_t)written;
+}
+
 static BD_FILE_H *_file_open(void *handle, const char* filename)
 {
     BD_FILE_H *file;
@@ -131,6 +160,7 @@ static BD_FILE_H *_file_open(void *handle, const char* filename)
     file->close = _file_close;
     file->seek  = _file_seek;
     file->read  = _file_read;
+    file->write = _file_write;
     file->tell  = _file_tell;
 
     file->internal = (void*)(intptr_t)fd;

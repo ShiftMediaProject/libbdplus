@@ -78,6 +78,24 @@ static int64_t _file_read(BD_FILE_H *file, uint8_t *buf, int64_t size)
     return 0;
 }
 
+static int64_t _file_write(BD_FILE_H *file, const uint8_t *buf, int64_t size)
+{
+    if (size > 0 && size < BD_MAX_SSIZE) {
+        return (int64_t)fwrite(buf, 1, (size_t)size, (FILE *)file->internal);
+    }
+
+    if (size == 0) {
+        if (fflush((FILE *)file->internal)) {
+            BD_DEBUG(DBG_FILE, "fflush() failed (%p)\n", (void*)file);
+            return -1;
+        }
+        return 0;
+    }
+
+    BD_DEBUG(DBG_FILE | DBG_CRIT, "Ignoring invalid write of size %" PRId64 " (%p)\n", size, (void*)file);
+    return 0;
+}
+
 static BD_FILE_H *_file_open(void *handle, const char* filename)
 {
     BD_FILE_H *file;
@@ -110,6 +128,7 @@ static BD_FILE_H *_file_open(void *handle, const char* filename)
     file->close    = _file_close;
     file->seek     = _file_seek;
     file->read     = _file_read;
+    file->write    = _file_write;
     file->tell     = _file_tell;
 
     BD_DEBUG(DBG_FILE, "Opened WIN32 file %s (%p)\n", filename, (void*)file);

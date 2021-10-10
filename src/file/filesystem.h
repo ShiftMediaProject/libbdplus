@@ -20,6 +20,10 @@
 #ifndef BDPLUS_FILESYSTEM_H_
 #define BDPLUS_FILESYSTEM_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdint.h>
 
 #ifndef BD_PUBLIC
@@ -65,5 +69,8 @@ struct bdplus_s;
 BD_PUBLIC
 void bdplus_set_fopen(struct bdplus_s *bdplus, void *handle, BDPLUS_FILE_OPEN p);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* BDPLUS_FILESYSTEM_H_ */
