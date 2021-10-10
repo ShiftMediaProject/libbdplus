@@ -1148,6 +1148,10 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 }
 
 
+void segment_close_m2ts(bdplus_st_t *st)
+{
+    free(st);
+}
 
 bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
 {

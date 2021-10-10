@@ -52,6 +52,7 @@ BD_PRIVATE bdplus_st_t *segment_set_m2ts    ( conv_table_t *, uint32_t );
 BD_PRIVATE int32_t      segment_patchfile   ( conv_table_t *, uint32_t , FILE * );
 BD_PRIVATE int32_t      segment_patchseek   ( bdplus_st_t *, uint64_t );
 BD_PRIVATE int32_t      segment_patch       ( bdplus_st_t *, int32_t, uint8_t * );
+BD_PRIVATE void         segment_close_m2ts  ( bdplus_st_t * );
 
 #endif
 

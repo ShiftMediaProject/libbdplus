@@ -350,7 +350,7 @@ bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 
 void bdplus_m2ts_close(bdplus_st_t *st)
 {
-    free(st);
+    segment_close_m2ts(st);
 }
 
 void bdplus_mmap(bdplus_t *plus, uint32_t id, void *mem )
