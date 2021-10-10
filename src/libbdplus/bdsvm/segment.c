@@ -753,7 +753,7 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
 
     // After decrypting the whole segment, re-parse it to remove any
     // repair descriptors that are "fakes".
-    unsigned logged_flag3 = 0;
+    unsigned logged_flag3 = 0, invalid_entries = 0;
     for (currentry = 0;
          currentry < segment->numEntries;
          currentry++) {
@@ -830,10 +830,23 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
 
         } // switch flags
 
+        /* deactivate invalid entries */
+        if (_is_invalid_entry(entry, currentry == 0 ? NULL : entry - 1)) {
+            entry->active = 0;
+            invalid_entries++;
+        }
+
     } // for entries
 
+    if (invalid_entries) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] broken table %05d, %d (deactivated %u invalid entries, %u entries left). Mask %02x%02x0x%02x...\n",
+                 conv_tab->Tables[ conv_tab->current_table ].tableID, conv_tab->current_segment,
+                 invalid_entries, segment->numEntries - invalid_entries,
+                 segment->key[0], segment->key[1], segment->key[2]);
+    }
+
     if (removed)
-        BD_DEBUG(DBG_BDPLUS,"[segment] cleaned out %u entries.\n", removed);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] cleaned out %u entries.\n", removed);
 
     return 1;
 }
