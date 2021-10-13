@@ -441,6 +441,7 @@ static int32_t segment_setMasks(conv_table_t **conv_tab, uint8_t *Table, size_t 
 {
     conv_table_t *ct;
     uint32_t ptr = 0;
+    unsigned rec_size = 16;
 
     if (!Table || !len) return -1;
 
@@ -458,7 +459,11 @@ static int32_t segment_setMasks(conv_table_t **conv_tab, uint8_t *Table, size_t 
     ct = *conv_tab;
 
     if (!memcmp(Table, "SEGK", 4)) {
-        if (memcmp(Table, "SEGK0100", 8)) {
+        if (!memcmp(Table, "SEGK0200", 8)) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] segment mask file with FM_ID (version %8.8s)\n", Table);
+            rec_size += 8;
+        }
+        else if (memcmp(Table, "SEGK0100", 8)) {
             BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] unsupported segment mask file version %8.8s\n", Table);
             return -1;
         }
@@ -468,7 +473,7 @@ static int32_t segment_setMasks(conv_table_t **conv_tab, uint8_t *Table, size_t 
         //return -1;
     }
 
-    while (ptr + 4 + 2 + 16 <= len) {
+    while (ptr + 4 + 2 + rec_size <= len) {
         subtable_t *subtable;
         segment_t  *segment;
         uint32_t    tableID, subtableID;
@@ -508,6 +513,13 @@ static int32_t segment_setMasks(conv_table_t **conv_tab, uint8_t *Table, size_t 
 
         memcpy(segment->key, &Table[ptr], 16);
         ptr += 16;
+        if (rec_size >= 16+8) {
+            memcpy(segment->mask, &Table[ptr], 8);
+            ptr += 8;
+        } else {
+            /* not available, enable all */
+            memset(segment->mask, 0xff, sizeof(segment->mask));
+        }
     }
 
     return ct->numTables;
@@ -1442,6 +1454,17 @@ static int ts_parse_desc_0x89(bdplus_st_t *ct, const unsigned spn, const unsigne
     }
 
     segment = &st->Segments[ sp_id ];
+
+    /* check Forensic Mark ID */
+    if (((d[4] ^ mask[0]) >> 6) == 2) {
+        unsigned fm_id_pos = (d[4] ^ mask[0]) & 0x3f;
+        unsigned fm_id_bit = segment->mask[ 7 - (fm_id_pos >> 3) ] & (1 << (fm_id_pos & 0x07));
+        BD_DEBUG(DBG_BDPLUS, "[segment] %s type 2 patch (FM_ID_bit_pos = %d, FM_ID_bit = %d)\n",
+                 fm_id_bit ? "activated" : "deactivated", fm_id_pos, !!fm_id_bit);
+        if (fm_id_bit == 0) {
+            return 0;
+        }
+    }
 
 #define E1_CACHE_SIZE 50  /* there must be some upper bound in the specs (?) */
     /* keep ordered list of next patches */
