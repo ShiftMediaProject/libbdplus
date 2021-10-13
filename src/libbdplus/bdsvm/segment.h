@@ -33,6 +33,8 @@ typedef struct conv_table_s conv_table_t;
 typedef struct bdplus_st_s bdplus_st_t;
 #endif
 
+struct bdplus_file;
+
 BD_PRIVATE uint32_t     segment_numTables ( conv_table_t * );
 BD_PRIVATE uint32_t     segment_numEntries ( conv_table_t * );
 
@@ -46,7 +48,7 @@ BD_PRIVATE int32_t      segment_setSegment  ( conv_table_t *, uint32_t, uint32_t
 BD_PRIVATE int32_t      segment_decrypt     ( conv_table_t *, uint8_t *, uint8_t * );
 
 BD_PRIVATE int32_t      segment_save        ( conv_table_t *, FILE * );
-BD_PRIVATE int32_t      segment_load        ( conv_table_t **,FILE * );
+BD_PRIVATE int32_t      segment_load        ( conv_table_t **, struct bdplus_file * );
 
 BD_PRIVATE bdplus_st_t *segment_set_m2ts    ( conv_table_t *, uint32_t );
 BD_PRIVATE int32_t      segment_patchfile   ( conv_table_t *, uint32_t , FILE * );

@@ -30,6 +30,7 @@
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
+#include "file/file.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -965,21 +966,26 @@ static int segment_sortby_tableid(const void *a1, const void *a2)
 }
 
 
-int32_t segment_load(conv_table_t **conv_tab, FILE *fd)
+int32_t segment_load(conv_table_t **conv_tab, BD_FILE_H *fp)
 {
-    uint32_t fileLen;
-    uint32_t len;
+    int64_t fileLen;
+    int64_t len;
     uint8_t *buffer = NULL;
 
     BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] loading cached convTable file\n");
-    fseek(fd, 0L, SEEK_END);
-    fileLen=ftell(fd);
-    rewind(fd);
-    buffer=(uint8_t *)malloc(fileLen+1);
-    len=fread(buffer, fileLen, 1, fd);
+
+    fileLen = file_size(fp);
+    if (fileLen < 2 || fileLen > 0x400000)
+        return -1;
+
+    buffer = (uint8_t *)malloc(fileLen);
+    if (!buffer)
+        return -1;
+
+    len = file_read(fp, buffer, fileLen);
 
     // Save the table to VM
-    if (len) {
+    if (len == fileLen) {
         // Decode the table into C structures.
         if (fileLen > 8 && !memcmp(buffer, "SEGK0", 5))
             segment_setMasks(conv_tab, buffer, fileLen);

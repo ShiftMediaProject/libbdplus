@@ -247,15 +247,17 @@ int32_t bdplus_start(bdplus_t *plus)
         cachefile = bdplus_disc_findcachefile(plus);
 
     if (cachefile && !plus->cache_tab) {
-        FILE *fp = fopen(cachefile, "rb");
+        BD_FILE_H *fp = file_open_default()(NULL, cachefile);
         if (fp) {
             conv_table_t *ct = NULL;
-            BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] loading cached conversion table...\n");
+            BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] loading cached conversion table %s ...\n", cachefile);
             if(segment_load(&ct, fp) == 1) {
                 segment_activateTable(ct);
                 plus->cache_tab = ct;
             }
-            fclose(fp);
+            file_close(fp);
+        } else {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error opening %s\n", cachefile);
         }
     }
 
