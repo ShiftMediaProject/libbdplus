@@ -1215,10 +1215,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 
             // PATCH 0
 
-            offset = (( (uint64_t)entry->index +
-                        (uint64_t)entry->patch0_address_adjust) *
-                      (uint64_t)0xC0 +
-                      (uint64_t)entry->patch0_buffer_offset);
+            offset = _entry_offset0(entry);
 
             if (firsttime) {
                 BD_DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch0\n",
@@ -1239,11 +1236,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 
             // PATCH 1
 
-            offset = (( (uint64_t)entry->index +
-                        (uint64_t)entry->patch0_address_adjust +
-                        (uint64_t)entry->patch1_address_adjust) *
-                      (uint64_t)0xC0 +
-                      (uint64_t)entry->patch1_buffer_offset);
+            offset = _entry_offset1(entry);
 
             if (firsttime) {
                 BD_DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch1\n",
@@ -1565,11 +1558,7 @@ int32_t segment_patch(bdplus_st_t *ct, int len, uint8_t *buffer)
 
             // Skip any entries that are in-active.
             if (!entry->active) continue;
-
-            offset0 = (((uint64_t)entry->index +
-                        (uint64_t)entry->patch0_address_adjust) *
-                       (uint64_t)0xC0 +
-                       (uint64_t)entry->patch0_buffer_offset);
+            offset0 = _entry_offset0(entry);
 
             // If this Entry is beyond this buffer, stop here, we need
             // more data.
@@ -1578,12 +1567,7 @@ int32_t segment_patch(bdplus_st_t *ct, int len, uint8_t *buffer)
                 return patches;
             }
 
-
-            offset1 = (( (uint64_t)entry->index +
-                         (uint64_t)entry->patch0_address_adjust +
-                         (uint64_t)entry->patch1_address_adjust) *
-                       (uint64_t)0xC0 +
-                       (uint64_t)entry->patch1_buffer_offset);
+            offset1 = _entry_offset1(entry);
 
             // While this Entry (patch1) is (completely) before this
             // buffer, skip to the next
