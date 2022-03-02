@@ -408,7 +408,7 @@ int32_t bdplus_run_convtab(bdplus_t *plus)
             // Generic table retrieval.
 
             switch(current_break) {
-            case 0:
+            //case 0:
             case 1:
             case 2:
                 break; // Do nothing
@@ -531,7 +531,7 @@ int32_t bdplus_run_idle(VM *vm)
             current_break++;
 
             switch(current_break) {
-            case 0: /* never 0 */
+            //case 0: /* never 0 */
             case 1:
             case 2:
             case 3:
