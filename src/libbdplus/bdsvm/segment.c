@@ -1045,7 +1045,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
     STORE2((uint8_t *)&u16, ct->numTables);
     rval = fwrite(&u16, sizeof(u16), 1, fd);
     if(rval != 1)
-      BD_DEBUG(DBG_BDPLUS,"[segment] Unable to write number of tables\n");
+        goto fail;
 
     // We use "offset" to keep track of where we are, and were we WILL write
     // entries, for the index-offset-array we write at the start of each
@@ -1061,10 +1061,14 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
         STORE4((uint8_t *)&u32, subtable->tableID);
         rval = fwrite(&u32, sizeof(u32), 1, fd);
+        if (rval != 1)
+            goto fail;
         offset += 4;
 
         STORE2((uint8_t *)&u16, subtable->numSegments);
         rval = fwrite(&u16, sizeof(u16), 1, fd);
+        if (rval != 1)
+            goto fail;
         offset += 2;
 
         offset += subtable->numSegments * sizeof(uint32_t);
@@ -1078,6 +1082,8 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
             //STORE4((uint8_t *)&u32, segment->offset);
             STORE4((uint8_t *)&u32, offset);
             rval = fwrite(&u32, sizeof(u32), 1, fd);
+            if (rval != 1)
+                goto fail;
 
             // Increase offset based on size of entries.
             offset += sizeof(segment->numEntries);
@@ -1101,6 +1107,8 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
             STORE4((uint8_t *)&u32, segment->numEntries);
             rval = fwrite(&u32, sizeof(u32), 1, fd);
+            if (rval != 1)
+                goto fail;
 
             // Write out entry index list
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
@@ -1109,6 +1117,8 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
                 STORE4((uint8_t *)&u32, entry->index);
                 rval = fwrite(&u32, sizeof(u32), 1, fd);
+                if (rval != 1)
+                    goto fail;
             }
 
             // Write out entries
@@ -1117,17 +1127,29 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
                 entry = &segment->Entries[ currentry ];
 
                 rval = fwrite(&entry->flags, 1, 1, fd);
+                if (rval != 1)
+                    goto fail;
 
                 u32 = entry->patch0_address_adjust << 20;
                 u32 |= (entry->patch1_address_adjust << 8);
                 STORE4(tmp, u32);
                 rval = fwrite(tmp, 3, 1, fd);
+                if (rval != 1)
+                    goto fail;
 
                 rval = fwrite(&entry->patch0_buffer_offset, 1, 1, fd);
+                if (rval != 1)
+                    goto fail;
                 rval = fwrite(&entry->patch1_buffer_offset, 1, 1, fd);
+                if (rval != 1)
+                    goto fail;
 
                 rval = fwrite(&entry->patch0, sizeof(entry->patch0), 1, fd);
+                if (rval != 1)
+                    goto fail;
                 rval = fwrite(&entry->patch1, sizeof(entry->patch1), 1, fd);
+                if (rval != 1)
+                    goto fail;
 
             } // entries
 
@@ -1135,6 +1157,9 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
     } // tables
 
+    return 0;
+ fail:
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] Saving segment failed\n");
     return -1;
 }
 
