@@ -197,6 +197,7 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
     // Hash it.
     gcry_md_hash_buffer(GCRY_MD_SHA1, digest, namehash, shalen - 1);
+    X_FREE(namehash);
 
     memset(str, 0, sizeof(str));
     BD_DEBUG(DBG_BDPLUS,"[diff] find hashdb: %s\n",
