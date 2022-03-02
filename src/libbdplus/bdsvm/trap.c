@@ -135,7 +135,7 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
     gcry_error_t gcry_err;
     uint32_t i;
     uint8_t decryptedKey[AES_BLOCK_SIZE]; // Temporary key
-    char errstr[100];
+    char errstr[100] = "";
 
     BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Aes(KeyID %08X)\n", opOrKeyID);
 
@@ -151,7 +151,12 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
     if ((opOrKeyID < 0xFFF10000) && (opOrKeyID > 6))
         return STATUS_INVALID_PARAMETER;
 
-    gcry_cipher_open(&gcry_h, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);
+    gcry_err = gcry_cipher_open(&gcry_h, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);
+    if (gcry_err) {
+        gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes %s.\n", errstr);
+        return STATUS_INVALID_PARAMETER;
+    }
 
     switch(opOrKeyID) {
 
