@@ -1464,6 +1464,8 @@ static int ts_parse_desc_0x89(bdplus_st_t *ct, const unsigned spn, const unsigne
     if (segment->Entries == NULL) {
         segment->Entries = calloc(E1_CACHE_SIZE, sizeof(st->Segments[sp_id].Entries[0]));
         segment->numEntries = 0;
+        if (!segment->Entries)
+            return 0;
     }
     /* drop past entries */
     while (segment->numEntries > 0 &&
