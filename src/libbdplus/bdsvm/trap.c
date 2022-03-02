@@ -1183,7 +1183,7 @@ uint32_t TRAP_LoadContentCode(bdplus_config_t *config, uint8_t *FileName, uint32
         file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
-    if (file_seek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
+    if (file_seek(fd, (int64_t)Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)FileName, Section);
         file_close(fd);
         return STATUS_INVALID_PARAMETER;
