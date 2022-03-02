@@ -215,11 +215,13 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
 
         if (!config || !config->aes_keys) {
             BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_Aes: AES keys not loaded.\n");
+            gcry_cipher_close(gcry_h);
             return STATUS_INVALID_PARAMETER;
         }
 
         if ((int)opOrKeyID >= config->num_aes_keys) {
             BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS): Key %u does not exist in config.\n", opOrKeyID);
+            gcry_cipher_close(gcry_h);
             return STATUS_INVALID_PARAMETER;
         }
 
