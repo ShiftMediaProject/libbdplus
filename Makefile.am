@@ -42,7 +42,6 @@ libbdplus_la_SOURCES=\
 	src/file/file.h \
 	src/file/file.c \
 	src/file/filesystem.h \
-	src/file/file_default.h \
 	src/file/configfile.c \
 	src/file/configfile.h \
 	src/util/attributes.h \
