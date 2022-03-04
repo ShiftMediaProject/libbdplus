@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
 
-EXTRA_DIST=bootstrap COPYING README.txt
+EXTRA_DIST=bootstrap COPYING README.md
 
 SET_FEATURES = @SET_FEATURES@
 SET_INCLUDES = -I$(top_srcdir)/src -I$(top_builddir)/src/libbdplus
