@@ -1,7 +1,7 @@
 dnl library version number
 m4_define([bdplus_major], 0)
-m4_define([bdplus_minor], 1)
-m4_define([bdplus_micro], 2)
+m4_define([bdplus_minor], 2)
+m4_define([bdplus_micro], 0)
 m4_define([bdplus_version],[bdplus_major.bdplus_minor.bdplus_micro])
 
 dnl library (.so) version
@@ -14,8 +14,8 @@ dnl - If ABI is broken, increase current and set age and revision to 0.
 #
 dnl Library file name will be libbdplus.(current-age).age.revision
 #
-m4_define([lt_current],  1)
-m4_define([lt_age],      1)
+m4_define([lt_current],  2)
+m4_define([lt_age],      2)
 m4_define([lt_revision], 0)
 
 dnl initilization
