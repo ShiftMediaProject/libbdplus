@@ -1,4 +1,6 @@
-- Fix config path charset issues in Win32
+2022-03-06: Version 0.2.0
+- Add support for cached conversion tables.
+- Fix config path charset issues in Win32.
 - Use BDPLUS_DEBUG_FILE environment variable for log file.
 - Export API functions automatically when creating Windows dll.
 - Improve Windows compatibility.
