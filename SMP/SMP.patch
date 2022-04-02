@@ -1,5 +1,44 @@
+diff --git a/src/file/dirs_win32.c b/src/file/dirs_win32.c
+index d73796a..1e01b14 100644
+--- a/src/file/dirs_win32.c
++++ b/src/file/dirs_win32.c
+@@ -53,6 +53,7 @@ char *file_get_data_home(void)
+ {
+     wchar_t wdir[MAX_PATH];
+ 
++# if !defined(WINAPI_FAMILY) || !(WINAPI_FAMILY == WINAPI_FAMILY_PC_APP || WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+     /* Get the "Application Data" folder for the user */
+     if (S_OK == SHGetFolderPathW(NULL, CSIDL_APPDATA | CSIDL_FLAG_CREATE,
+                                  NULL, SHGFP_TYPE_CURRENT, wdir)) {
+@@ -63,6 +64,7 @@ char *file_get_data_home(void)
+         }
+         return appdir;
+     }
++#endif
+ 
+     BD_DEBUG(DBG_FILE, "Can't find user configuration directory !\n");
+     return NULL;
+@@ -84,6 +86,7 @@ const char *file_get_config_system(const char *dir)
+         if (appdir)
+             return appdir;
+ 
++# if !defined(WINAPI_FAMILY) || !(WINAPI_FAMILY == WINAPI_FAMILY_PC_APP || WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
+         /* Get the "Application Data" folder for all users */
+         if (S_OK == SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA | CSIDL_FLAG_CREATE,
+                     NULL, SHGFP_TYPE_CURRENT, wdir)) {
+@@ -93,7 +96,9 @@ const char *file_get_config_system(const char *dir)
+                 WideCharToMultiByte (CP_UTF8, 0, wdir, -1, appdir, len, NULL, NULL);
+             }
+             return appdir;
+-        } else {
++        } else
++#endif
++        {
+             BD_DEBUG(DBG_FILE, "Can't find common configuration directory !\n");
+             return NULL;
+         }
 diff --git a/src/util/attributes.h b/src/util/attributes.h
-index 9aa84d8..4f30632 100644
+index 1cc611c..4e68d7b 100644
 --- a/src/util/attributes.h
 +++ b/src/util/attributes.h
 @@ -50,7 +50,7 @@
@@ -11,15 +50,3 @@ index 9aa84d8..4f30632 100644
  #  define BD_LIKELY(x)   (x)
  #  define BD_UNLIKELY(x) (x)
  #else
-diff --git a/src/util/mutex.h b/src/util/mutex.h
-index 6c19704..627ca85 100644
---- a/src/util/mutex.h
-+++ b/src/util/mutex.h
-@@ -25,6 +25,7 @@
- #endif
- 
- #if defined(_WIN32)
-+#   define WIN32_LEAN_AND_MEAN
- #   include <windows.h>
- #elif defined(HAVE_PTHREAD_H)
- #   include <pthread.h>

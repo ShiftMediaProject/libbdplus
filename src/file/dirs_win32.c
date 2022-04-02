@@ -53,6 +53,7 @@ char *file_get_data_home(void)
 {
     wchar_t wdir[MAX_PATH];
 
+# if !defined(WINAPI_FAMILY) || !(WINAPI_FAMILY == WINAPI_FAMILY_PC_APP || WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
     /* Get the "Application Data" folder for the user */
     if (S_OK == SHGetFolderPathW(NULL, CSIDL_APPDATA | CSIDL_FLAG_CREATE,
                                  NULL, SHGFP_TYPE_CURRENT, wdir)) {
@@ -63,6 +64,7 @@ char *file_get_data_home(void)
         }
         return appdir;
     }
+#endif
 
     BD_DEBUG(DBG_FILE, "Can't find user configuration directory !\n");
     return NULL;
@@ -84,6 +86,7 @@ const char *file_get_config_system(const char *dir)
         if (appdir)
             return appdir;
 
+# if !defined(WINAPI_FAMILY) || !(WINAPI_FAMILY == WINAPI_FAMILY_PC_APP || WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP)
         /* Get the "Application Data" folder for all users */
         if (S_OK == SHGetFolderPathW(NULL, CSIDL_COMMON_APPDATA | CSIDL_FLAG_CREATE,
                     NULL, SHGFP_TYPE_CURRENT, wdir)) {
@@ -93,7 +96,9 @@ const char *file_get_config_system(const char *dir)
                 WideCharToMultiByte (CP_UTF8, 0, wdir, -1, appdir, len, NULL, NULL);
             }
             return appdir;
-        } else {
+        } else
+#endif
+        {
             BD_DEBUG(DBG_FILE, "Can't find common configuration directory !\n");
             return NULL;
         }

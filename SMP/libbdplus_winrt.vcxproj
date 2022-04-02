@@ -1,21 +1,22 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B30D4367-E5BF-4A9E-8BEE-18E79B5CF7E5}</ProjectGuid>
+    <ProjectGuid>{A30D4367-E5BF-4A9E-8BEE-18E79B5CF7E5}</ProjectGuid>
     <RootNamespace>bdplus</RootNamespace>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">
-    <Import Project="smp_deps.props" />
+    <Import Project="smp_winrt_deps.props" />
     <Import Project="libbdplus_files.props" />
   </ImportGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugWinRT|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4244;4267;4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libgcryptd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libgcryptd_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -51,14 +52,15 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugWinRT|x64'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4244;4267;4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libgcryptd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libgcryptd_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -94,7 +96,7 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLLWinRT|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -102,7 +104,8 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>libbdplus.def</ModuleDefinitionFile>
-      <AdditionalDependencies>gcryptd.lib;gpg-errord.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gcryptd_winrt.lib;gpg-errord_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -138,7 +141,7 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLLWinRT|x64'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -146,7 +149,8 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>libbdplus.def</ModuleDefinitionFile>
-      <AdditionalDependencies>gcryptd.lib;gpg-errord.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gcryptd_winrt.lib;gpg-errord_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -182,14 +186,15 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWinRT|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4244;4267;4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libgcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libgcrypt_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -225,14 +230,15 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseWinRT|x64'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4244;4267;4005;%(DisableSpecificWarnings)</DisableSpecificWarnings>
     </ClCompile>
     <Lib>
-      <AdditionalDependencies>libgcrypt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libgcrypt_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -268,7 +274,7 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLLWinRT|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -276,7 +282,8 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>libbdplus.def</ModuleDefinitionFile>
-      <AdditionalDependencies>gcrypt.lib;gpg-error.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gcrypt_winrt.lib;gpg-error_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -312,7 +319,7 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLLStaticDeps|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLLWinRTStaticDeps|Win32'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -320,7 +327,8 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>libbdplus.def</ModuleDefinitionFile>
-      <AdditionalDependencies>gcrypt.lib;gpg-error.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gcrypt_winrt.lib;gpg-error_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -356,7 +364,7 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLLWinRT|x64'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -364,7 +372,8 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>libbdplus.def</ModuleDefinitionFile>
-      <AdditionalDependencies>gcrypt.lib;gpg-error.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gcrypt_winrt.lib;gpg-error_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
@@ -400,7 +409,7 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
 )</Command>
     </CustomBuildStep>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLLStaticDeps|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLLWinRTStaticDeps|x64'">
     <ClCompile>
       <PreprocessorDefinitions>HAVE_CONFIG_H;inline=__inline;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.\;.\src;.\src\libbdplus;..\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
@@ -408,7 +417,8 @@ del /f /q $(OutDir)\licenses\libbdplus.txt
     </ClCompile>
     <Link>
       <ModuleDefinitionFile>libbdplus.def</ModuleDefinitionFile>
-      <AdditionalDependencies>gcrypt.lib;gpg-error.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>gcrypt_winrt.lib;gpg-error_winrt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/IGNORE:4006,4221,4264  %(AdditionalOptions)</AdditionalOptions>
     </Link>
     <PostBuildEvent>
       <Command>mkdir "$(OutDir)"\include
