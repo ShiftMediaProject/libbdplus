@@ -22,6 +22,7 @@
 #include "config.h"
 #endif
 
+#include "util/attributes.h" /* included before bdplus.h (define BD_PUBLIC for win32 dll exports) */
 #include "bdplus.h"
 
 #include "bdplus_data.h"
@@ -35,7 +36,7 @@
 #include "util/mutex.h"
 #include "util/strutl.h"
 #include "file/configfile.h"
-#include "file/file_default.h"
+#include "file/file.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -88,29 +89,56 @@ int32_t bdplus_get_code_date(bdplus_t *plus)
     return plus->date;
 }
 
+int32_t bdplus_is_cached(bdplus_t *plus)
+{
+    if (!plus) return -1;
+    if (!plus->started) return -1;
+
+    return plus->cache_tab != NULL;
+}
+
 
 static char *_slots_file(void)
 {
     char *base = file_get_cache_dir();
-    char *result;
-    result = str_printf("%s/slots.bin", base ? base : "/tmp/");
-    X_FREE(base);
+    char *result = NULL;
+    if (base) {
+        result = str_printf("%s/slots.bin", base);
+        X_FREE(base);
+    }
     return result;
 }
 
 static void _load_slots(bdplus_t *plus)
 {
     char *file_name = _slots_file();
-    bdplus_load_slots(plus, file_name);
-    X_FREE(file_name);
+    if (file_name) {
+        bdplus_load_slots(plus, file_name);
+        X_FREE(file_name);
+    }
 }
 
 static void _save_slots(bdplus_t *plus)
 {
     char *file_name = _slots_file();
-    file_mkpath(file_name);
-    bdplus_save_slots(plus, file_name);
-    X_FREE(file_name);
+    if (file_name) {
+        file_mkdirs(file_name);
+        bdplus_save_slots(plus, file_name);
+        X_FREE(file_name);
+    }
+}
+
+static BD_FILE_H *_file_open_default(void *handle, const char *name)
+{
+    BD_FILE_H *f = NULL;
+    char *full_name;
+
+    full_name = str_printf("%s" DIR_SEP "%s", (const char *)handle, name);
+    if (full_name)
+        f = file_open_default()(NULL, full_name);
+    X_FREE(full_name);
+
+    return f;
 }
 
 bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *vid)
@@ -143,6 +171,8 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
         return NULL;
     }
 
+    bd_mutex_init(&plus->mutex);
+
     plus->free_slot = BDPLUS_NUM_SLOTS-1;
 
     // What is this really?
@@ -150,15 +180,15 @@ bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *
     plus->attachedStatus[1] = 7;
 
     if (path) {
-        plus->device_path = (char*)malloc(strlen(path) + 1);
-        strcpy(plus->device_path, path);
-
+        plus->device_path = str_dup(path);
+        if (!plus->device_path) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
+            bdplus_free(plus);
+            return NULL;
+        }
         plus->config->fopen_handle = plus->device_path;
-        plus->config->fopen        = file_open_default;
+        plus->config->fopen        = _file_open_default;
     }
-
-    plus->mutex     = calloc(1, sizeof(BD_MUTEX));
-    bd_mutex_init(plus->mutex);
 
     if (plus->config->fopen) {
         if (_load_svm(plus) < 0) {
@@ -194,6 +224,7 @@ void bdplus_set_mk(bdplus_t *plus, const uint8_t *mk)
 
 int32_t bdplus_start(bdplus_t *plus)
 {
+    char *cachefile = NULL;
     int32_t result = 0;
 
     if (!plus) return -1;
@@ -202,7 +233,7 @@ int32_t bdplus_start(bdplus_t *plus)
         return -1;
     }
 
-    bd_mutex_lock(plus->mutex);
+    bd_mutex_lock(&plus->mutex);
 
     BD_DEBUG(DBG_BDPLUS, "[bdplus] running VM for conv_table...\n");
     // FIXME: Run this as separate thread?
@@ -210,11 +241,32 @@ int32_t bdplus_start(bdplus_t *plus)
 
     plus->started = 1;
 
-    bd_mutex_unlock(plus->mutex);
+    cachefile = str_dup(getenv("BDPLUS_CONVTAB"));
+
+    if (!cachefile)
+        cachefile = bdplus_disc_findcachefile(plus);
+
+    if (cachefile && !plus->cache_tab) {
+        BD_FILE_H *fp = file_open_default()(NULL, cachefile);
+        if (fp) {
+            conv_table_t *ct = NULL;
+            BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] loading cached conversion table %s ...\n", cachefile);
+            if(segment_load(&ct, fp) == 1) {
+                segment_activateTable(ct);
+                plus->cache_tab = ct;
+            }
+            file_close(fp);
+        } else {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] Error opening %s\n", cachefile);
+        }
+    }
+
+    X_FREE(cachefile);
+
+    bd_mutex_unlock(&plus->mutex);
 
     return result;
 }
-
 
 void bdplus_free(bdplus_t *plus)
 {
@@ -224,7 +276,7 @@ void bdplus_free(bdplus_t *plus)
         return;
     }
 
-    bd_mutex_lock(plus->mutex);
+    bd_mutex_lock(&plus->mutex);
 
     if (plus->started) {
         bdplus_run_shutdown(plus);
@@ -238,45 +290,61 @@ void bdplus_free(bdplus_t *plus)
 
     if (plus->conv_tab) {
         char *file = bdplus_disc_cache_file(plus, "convtab.bin");
-        FILE *fp = fopen(file, "wb");
-        X_FREE(file);
+        FILE *fp = NULL;
+        if (file) {
+            fp = fopen(file, "wb");
+            X_FREE(file);
+        }
         if (fp) {
             segment_save(plus->conv_tab, fp);
             fclose(fp);
         }
         segment_freeTable(&plus->conv_tab);
     }
+    if (plus->cache_tab) {
+        segment_freeTable(&plus->cache_tab);
+    }
 
     X_FREE(plus->device_path);
 
     bdplus_config_free(&plus->config);
 
-    bd_mutex_unlock(plus->mutex);
-    bd_mutex_destroy(plus->mutex);
-    X_FREE(plus->mutex);
+    bd_mutex_unlock(&plus->mutex);
+    bd_mutex_destroy(&plus->mutex);
 
     X_FREE(plus);
 }
 
 bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 {
+    bdplus_st_t *st;
+
     BD_DEBUG(DBG_BDPLUS, "[bdplus] set_m2ts %p -> %u\n", plus, m2ts);
 
     if (!plus) return NULL;
 
-    bd_mutex_lock(plus->mutex);
+    bd_mutex_lock(&plus->mutex);
 
-    if (!plus->conv_tab) {
-        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
-        bd_mutex_unlock(plus->mutex);
-        return NULL;
+    if (plus->cache_tab) {
+
+        st = segment_set_m2ts(plus->cache_tab, m2ts);
+        if (st) {
+            BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] using cached conversion table for %05u.m2ts\n", m2ts);
+        }
+
+    } else {
+        if (!plus->conv_tab) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[bdplus] bdplus_m2ts(%05u.m2ts): no conversion table\n", m2ts);
+            bd_mutex_unlock(&plus->mutex);
+            return NULL;
+        }
+
+        bdplus_run_m2ts(plus, m2ts);
+
+        st = segment_set_m2ts(plus->conv_tab, m2ts);
     }
 
-    bdplus_run_m2ts(plus, m2ts);
-
-    bdplus_st_t *st = segment_set_m2ts(plus->conv_tab, m2ts);
-
-    bd_mutex_unlock(plus->mutex);
+    bd_mutex_unlock(&plus->mutex);
 
     return st;
 }
@@ -284,7 +352,7 @@ bdplus_st_t *bdplus_m2ts(bdplus_t *plus, uint32_t m2ts)
 
 void bdplus_m2ts_close(bdplus_st_t *st)
 {
-    free(st);
+    segment_close_m2ts(st);
 }
 
 void bdplus_mmap(bdplus_t *plus, uint32_t id, void *mem )
@@ -360,10 +428,12 @@ static int32_t _bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, ui
         /* try to emulate player to get converson table. */
         BD_DEBUG(DBG_BDPLUS, "[bdplus] received CONVERSION TABLE event\n");
 
-        unsigned int num_titles = param2;
+        if (plus->cache_tab) {
+            return 0;
+        }
 
         bdplus_run_init(plus->vm);
-        return bdplus_run_convtab(plus, num_titles);
+        return bdplus_run_convtab(plus);
     }
 
 
@@ -397,11 +467,11 @@ int32_t bdplus_event(bdplus_t *plus, uint32_t event, uint32_t param1, uint32_t p
 
       if (!plus) return -1;
 
-      bd_mutex_lock(plus->mutex);
+      bd_mutex_lock(&plus->mutex);
 
       ret = _bdplus_event(plus, event, param1, param2);
 
-      bd_mutex_unlock(plus->mutex);
+      bd_mutex_unlock(&plus->mutex);
 
       return ret;
  }

@@ -90,10 +90,15 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
 
     BD_DEBUG(DBG_BDPLUS,"[diff] Memory size is %08X, num diff-files %08X\n", size, count);
 
-    if (trap >= count) return -1;
-
-    if (size > vmsize) return -2; // Safety
-
+    if (trap >= count) {
+        fclose(fd);
+        return -1;
+    }
+    if (size > vmsize) {
+        BD_DEBUG(DBG_BDPLUS,"[diff] Diff size larger than vmsize\n");
+        fclose(fd);
+        return -2; // Safety
+    }
 
     // Clear the area first.
     memset(addr, 0, vmsize);
@@ -110,6 +115,11 @@ int32_t diff_loadcore(uint8_t *addr, uint32_t vmsize, char *fname,
             start  = FETCH4((uint8_t*)&start);
             length = FETCH4((uint8_t*)&length);
 
+            if ((uint64_t)start + length > (uint64_t)vmsize) {
+              BD_DEBUG(DBG_BDPLUS,"[diff] Diff skipping load (would exceed vmsize)\n");
+              fclose(fd);
+              return -2;
+            }
             if (fread(&addr[ start ], length, 1, fd) != 1) goto fail;
         } // currdiff
 
@@ -170,7 +180,10 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
     shalen = sizeof(offset) + sizeof(*len) + strlen((char *)fname) + 1;
     namehash = (uint8_t *)malloc( shalen );
-    if (!namehash) return STATUS_INTERNAL_ERROR;
+    if (!namehash) {
+        fclose(fd);
+        return STATUS_INTERNAL_ERROR;
+    }
 
     // SHA[64bit-offset, 32bit-len, filename]
     STORE8(&namehash[0], offset);
@@ -184,6 +197,7 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
     // Hash it.
     gcry_md_hash_buffer(GCRY_MD_SHA1, digest, namehash, shalen - 1);
+    X_FREE(namehash);
 
     memset(str, 0, sizeof(str));
     BD_DEBUG(DBG_BDPLUS,"[diff] find hashdb: %s\n",
@@ -196,7 +210,10 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
               str_print_hex(str, sha_hdr.digest, sizeof(digest)));
 
         sha_hdr.next = FETCH4((uint8_t *)&sha_hdr.next);
-
+        if (sha_hdr.next < sizeof(sha_hdr.len)) {
+            BD_DEBUG(DBG_BDPLUS,"[diff] invalid data in hash_db.bin\n");
+            break;
+        }
         if (!memcmp(digest, sha_hdr.digest, sizeof(digest))) {
             // Found the digest we are looking for
             sha_hdr.len = FETCH4((uint8_t *)&sha_hdr.len);
@@ -205,7 +222,7 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
                    sha_hdr.next - (uint32_t)sizeof(sha_hdr.len));
 
             // Read in all digests, perhaps error checking?
-            if (!fread(dst, sha_hdr.next - sizeof(sha_hdr.len), 1, fd)) {
+            if (fread(dst, sha_hdr.next - sizeof(sha_hdr.len), 1, fd) != 1) {
                 BD_DEBUG(DBG_BDPLUS,"[diff] Short read on hash_db.bin!\n");
             }
             // Update new len
@@ -216,7 +233,10 @@ uint32_t diff_hashdb_load(uint8_t *hashname, uint8_t *fname, uint64_t offset,
 
         // Seek past this entry, "next" number of bytes from "next" position,
         // but we read "next" AND "len".
-        fseek(fd, sha_hdr.next - sizeof(sha_hdr.len), SEEK_CUR);
+        if (fseek(fd, sha_hdr.next - sizeof(sha_hdr.len), SEEK_CUR) < 0) {
+          BD_DEBUG(DBG_BDPLUS,"[diff] Seek to next hash_db.bin failed\n");
+          break;
+        }
 
     } // while fread
 

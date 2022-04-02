@@ -23,6 +23,9 @@
 
 #include <stdint.h>
 
+#ifndef BD_PUBLIC
+#  define BD_PUBLIC
+#endif
 
 /* opaque types */
 
@@ -46,6 +49,7 @@ typedef struct bdplus_st_s bdplus_st_t;
  * Get the bdplus library version number.
  *
  */
+BD_PUBLIC
 void bdplus_get_version(int *major, int *minor, int *micro);
 
 
@@ -57,13 +61,19 @@ void bdplus_get_version(int *major, int *minor, int *micro);
  * @param  vid          BD disc Volume ID
  * @return bdplus handle, NULL on error
  */
+BD_PUBLIC
 bdplus_t *bdplus_init(const char *path, const char *config_path, const uint8_t *vid);
 
 /* get BD+ content code generation */
+BD_PUBLIC
 int32_t bdplus_get_code_gen(bdplus_t *plus);
 
 /* get BD+ content code release date */
+BD_PUBLIC
 int32_t bdplus_get_code_date(bdplus_t *plus);
+
+BD_PUBLIC
+int32_t bdplus_is_cached(bdplus_t *plus);
 
 
 /*
@@ -71,6 +81,7 @@ int32_t bdplus_get_code_date(bdplus_t *plus);
  *
  * @param  bdplus handle
  */
+BD_PUBLIC
 void bdplus_free(bdplus_t *);
 
 
@@ -80,6 +91,7 @@ void bdplus_free(bdplus_t *);
  * @param  id   Memory region type
  * @param  mem  Memory region address
  */
+BD_PUBLIC
 void bdplus_mmap(bdplus_t *, uint32_t id, void *mem);
 
 /*
@@ -87,6 +99,7 @@ void bdplus_mmap(bdplus_t *, uint32_t id, void *mem);
  *
  * @param  mk  BD disc Media Key
  */
+BD_PUBLIC
 void bdplus_set_mk(bdplus_t *, const uint8_t *mk);
 
 
@@ -97,6 +110,7 @@ void bdplus_set_mk(bdplus_t *, const uint8_t *mk);
  * @param  psr_read   Function used to read from PSR
  * @param  psr_write  Function used to write to PSR
  */
+BD_PUBLIC
 void bdplus_psr(bdplus_t *,
                 void *regs,
                 uint32_t (*psr_read) (void *regs, int reg),
@@ -106,6 +120,7 @@ void bdplus_psr(bdplus_t *,
 /*
  * Start the bdplus VM
  */
+BD_PUBLIC
 int32_t bdplus_start(bdplus_t *);
 
 
@@ -114,6 +129,7 @@ int32_t bdplus_start(bdplus_t *);
  *
  * @param  event  event type (BDPLUS_EVENT_*)
  */
+BD_PUBLIC
 int32_t bdplus_event(bdplus_t *, uint32_t event, uint32_t param1, uint32_t param2);
 
 
@@ -128,12 +144,14 @@ int32_t bdplus_event(bdplus_t *, uint32_t event, uint32_t param1, uint32_t param
  * @param  m2ts  m2ts file number
  * @return stream handle, NULL on error
  */
+BD_PUBLIC
 bdplus_st_t *bdplus_m2ts(bdplus_t *, uint32_t m2ts);
 
 
 /*
  * Close stream handle.
  */
+BD_PUBLIC
 void bdplus_m2ts_close(bdplus_st_t *);
 
 
@@ -142,6 +160,7 @@ void bdplus_m2ts_close(bdplus_st_t *);
  *
  * @param  offset  new byte offset of the stream.
  */
+BD_PUBLIC
 int32_t bdplus_seek(bdplus_st_t *, uint64_t offset);
 
 /*
@@ -151,6 +170,7 @@ int32_t bdplus_seek(bdplus_st_t *, uint64_t offset);
  * @param  buffer  stream data
  * @return Number of patches performed for the buffer (statistics).
  */
+BD_PUBLIC
 int32_t bdplus_fixup(bdplus_st_t *, int len, uint8_t *buffer);
 
 

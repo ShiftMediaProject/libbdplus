@@ -1,6 +1,6 @@
 ACLOCAL_AMFLAGS=-I m4
 
-EXTRA_DIST=bootstrap COPYING README.txt
+EXTRA_DIST=bootstrap COPYING README.md
 
 SET_FEATURES = @SET_FEATURES@
 SET_INCLUDES = -I$(top_srcdir)/src -I$(top_builddir)/src/libbdplus
@@ -40,9 +40,8 @@ libbdplus_la_SOURCES=\
 	src/libbdplus/bdsvm/sha1.c \
 	src/file/dirs.h \
 	src/file/file.h \
+	src/file/file.c \
 	src/file/filesystem.h \
-	src/file/file_default.c \
-	src/file/file_default.h \
 	src/file/configfile.c \
 	src/file/configfile.h \
 	src/util/attributes.h \
@@ -65,6 +64,16 @@ else
 libbdplus_la_SOURCES+= \
 	src/file/dirs_xdg.c
 endif
+endif
+
+if HAVE_WIN32
+libbdplus_la_SOURCES+= \
+	src/file/dir_win32.c \
+	src/file/file_win32.c
+else
+libbdplus_la_SOURCES+= \
+	src/file/dir_posix.c \
+	src/file/file_posix.c
 endif
 
 pkginclude_HEADERS = \

@@ -20,12 +20,18 @@
 
 #include "trap_helper.h"
 
+#include "util/logging.h"
+
 #include <stdlib.h>
 #include <string.h>
 
 static sha_t *_new_sha_ctx(uint8_t *dst)
 {
   sha_t *ctx = malloc(sizeof(sha_t));
+  if (!ctx) {
+      BD_DEBUG(DBG_CRIT, "out of memory\n");
+      return NULL;
+  }
   memset(ctx, 0, sizeof(sha_t));
   ctx->dst = dst;
   return ctx;
@@ -53,8 +59,10 @@ sha_t *get_sha_ctx(sha_t **ctx_head, uint8_t *dst) {
 
   /* if the dst in question isn't found, allocate space for it */
   ctx_new = _new_sha_ctx(dst);
-  ctx_curr->next = ctx_new;
-  ctx_new->prev = ctx_curr;
+  if (ctx_new) {
+      ctx_curr->next = ctx_new;
+      ctx_new->prev = ctx_curr;
+  }
   return ctx_new;
 }
 

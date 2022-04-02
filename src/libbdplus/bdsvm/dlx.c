@@ -59,12 +59,14 @@ VM *dlx_initVM(struct bdplus_s *plus)
 {
     VM *vm = calloc(1, sizeof(VM));
     if (!vm) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
         return NULL;
     }
 
     vm->size = DLX_MEMORY_SIZE;
     vm->addr = (uint8_t *)malloc(vm->size);
     if (!vm->addr) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
         X_FREE(vm);
         return NULL;
     }

@@ -75,7 +75,7 @@ static void _libaacs_get_vid(uint8_t *vid, uint8_t *mk, const char *root)
     memcpy(vid, aacs_vid, 16);
 
     const uint8_t *aacs_mk = aacs_get_mk(aacs);
-    if (!aacs_vid) {
+    if (!aacs_mk) {
         fprintf(stderr, "aacs_get_mk() failed.\n");
         aacs_close(aacs);
         exit(1);
@@ -98,7 +98,11 @@ int main(int argc, char **argv)
     unsigned ii;
 
     if (argc < 2) {
+#ifndef HAVE_LIBAACS
+        fprintf(stderr, "%s /path/tobluray <VID>\r\n", argv[0]);
+#else
         fprintf(stderr, "%s /path/tobluray [VID]\r\n", argv[0]);
+#endif
         fprintf(stderr, "Where we expect to find /path/tobluray/BDSVM/\r\n");
         exit(1);
     }
@@ -106,6 +110,10 @@ int main(int argc, char **argv)
     if (argc < 3) {
       _libaacs_get_vid(vid, mk, argv[1]);
     } else {
+        if (strlen(argv[2]) != 32) {
+            fprintf(stderr, "invalid VID (should be 32 chars)\n");
+            exit(1);
+        }
         for (ii = 0; ii < 16; ii++) {
             vid[ii] = (_hex_byte(argv[2][2*ii]) << 4) | _hex_byte(argv[2][2*ii + 1]);
         }

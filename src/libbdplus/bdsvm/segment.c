@@ -30,6 +30,7 @@
 #include "util/logging.h"
 #include "util/macro.h"
 #include "util/strutl.h"
+#include "file/file.h"
 
 #include <stdlib.h>
 #include <inttypes.h>
@@ -97,7 +98,7 @@ typedef struct entry_s entry_t;
 
 struct segment_s {
     uint32_t encrypted;
-    uint32_t offset;
+  //uint32_t offset;
     uint32_t numEntries;
     entry_t *Entries;
 
@@ -124,6 +125,8 @@ struct conv_table_s {
     uint32_t current_table;     // When iterating
     uint32_t current_segment;   // - "" -
 
+    /* Table type. Redundant, but simplifies things ... */
+    enum { ct_full = 0, ct_segment_masks = 1, ct_derivation_data = 2 } type;
 };
 
 /*
@@ -141,11 +144,90 @@ struct bdplus_st_s {
     uint64_t stream_offset;
 
     uint64_t next_patch_offset; /* optimize patching */
+
+    /* Process fixups from stream ? */
+    uint8_t  process_stream;
 };
 
 /*
  *
  */
+
+static int64_t _entry_offset0(const entry_t *e)
+{
+    return (((uint64_t)e->index +
+             (uint64_t)e->patch0_address_adjust) *
+            (uint64_t)0xC0 +
+            (uint64_t)e->patch0_buffer_offset);
+}
+
+static int64_t _entry_offset1(const entry_t *e)
+{
+    return (( (uint64_t)e->index +
+              (uint64_t)e->patch0_address_adjust +
+              (uint64_t)e->patch1_address_adjust) *
+            (uint64_t)0xC0 +
+            (uint64_t)e->patch1_buffer_offset);
+}
+
+static int _is_invalid_entry(const entry_t *e, const entry_t *prev)
+{
+    unsigned invalid = 0;
+
+    /*
+      Do some basic sanity checks for conversion table entry.
+      Note: Following checks are incomplete. The idea is to catch tables with
+      random or encrypted data. This works quite well because of there are
+      thousands of entries in the table.
+
+      Checks could be improved a lot if we parse also .clpi file and the stream.
+    */
+
+    if ((e->flags >> 6) == 3) {
+        BD_DEBUG(DBG_BDPLUS, "[segment] invalid flags in entry.\n");
+        return 1;
+    }
+
+    /* Check only unconditionally applied entries. */
+    /* Inactive entries are most likely filled with random data to secure the key. */
+    if ((e->flags >> 6) == 1) {
+        if (e->patch0_buffer_offset < 8 || e->patch0_buffer_offset > 187 ||
+            e->patch1_buffer_offset < 8 || e->patch1_buffer_offset > 187) {
+
+            /* - too easy to reconstruct, would compromize segment key */
+            /* - ATC is used to control buffering and disk spinning at _lower_ layers */
+            /* - not user-visible, useless for watermarking. */
+            BD_DEBUG(DBG_BDPLUS, "[segment] invalid patch buffer offsets in entry.\n");
+            invalid = 1;
+        }
+        if (_entry_offset0(e) >= _entry_offset1(e) ||
+            ( prev && (prev->flags >> 6) == 1 &&
+              _entry_offset0(e) < _entry_offset1(prev))) {
+
+            /* tables are always sorted */
+            BD_DEBUG(DBG_BDPLUS, "[segment] invalid offset in entry.\n");
+            invalid = 1;
+        }
+    }
+
+    return invalid;
+}
+
+/*
+ *
+ */
+
+static int  _findTableIndex(conv_table_t *ct, unsigned m2ts)
+{
+    unsigned ii;
+    for (ii = 0; ii < ct->numTables; ii++) {
+        if (ct->Tables[ii].tableID == m2ts) {
+            return ii;
+        }
+    }
+    return -1;
+}
+
 
 uint32_t segment_numTables(conv_table_t *ct)
 {
@@ -167,9 +249,39 @@ uint32_t segment_numEntries(conv_table_t *ct)
     return entries;
 }
 
+static int32_t segment_validateTable(conv_table_t *ct)
+{
+    uint32_t table, currseg, currentry;
+    int errors = 0;
+
+    for (table = 0; table < ct->numTables; table++) {
+        subtable_t *subtable = &ct->Tables[ table ];
+        for (currseg = 0; currseg < subtable->numSegments; currseg++) {
+            segment_t *segment = &subtable->Segments[ currseg ];
+            for (currentry = 0; currentry < segment->numEntries; currentry++) {
+                entry_t *entry = &segment->Entries[ currentry ];
+                errors += _is_invalid_entry(entry, currentry == 0 ? NULL : (entry - 1));
+            }
+        }
+    }
+    return errors;
+}
+
+static void *_arrayGrow(void *mem, size_t elem_size, size_t n_old, size_t n_add)
+{
+    void *new_mem = realloc(mem, elem_size * (n_old + n_add));
+    if (!new_mem) {
+        free(mem);
+        return NULL;
+    }
+    memset((uint8_t*)new_mem + elem_size * n_old, 0, elem_size * n_add);
+    return new_mem;
+}
+
+
 int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
 {
-    uint32_t numTables, table, currseg, currentry;
+    uint32_t table, currseg, currentry;
     uint32_t tmp;
     conv_table_t *ct;
     subtable_t *subtable;
@@ -179,35 +291,23 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     uint32_t offset = 0;
     uint32_t encrypted_segments = 0;
 
-    if (!Table || !len) return -1;
+    if (!Table || len < 2) return -1;
+    if (len > 0x400000) return -1; /* VM memory size */
 
 
     BD_DEBUG(DBG_BDPLUS,"[segment] Starting decode of conv_tab.bin: %p (%d)\n", Table, len);
 
-    ct = *conv_tab;
-
-
-    // If we do not already have a conv_tab, allocate it.
-    if (!ct) {
-
-        ct = (conv_table_t *) malloc(sizeof(*ct));
-        if (!ct) return -2;
-
-        memset(ct, 0, sizeof(*ct));
-
-        *conv_tab = ct;
-
+    if (*conv_tab) {
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[segment] ERROR: Table already exists.\n");
+        return -1;
     }
+
+    ct = (conv_table_t *) calloc(1, sizeof(*ct));
+    if (!ct) return -2;
 
 
     // Update the number of tables we received
-    numTables = FETCHU2(&Table[ptr]);
-
-    if (ct->numTables && (ct->numTables != numTables)) {
-        BD_DEBUG(DBG_BDPLUS,"[segment] Warning, numTables changed between conv_tab parts!\n");
-    }
-
-    ct->numTables = numTables;
+    ct->numTables = FETCHU2(&Table[ptr]);
     ptr += 2;
 
     // Let nextSegment() initialise these, So that we can ignore
@@ -215,72 +315,52 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     ct->current_table   = 0xffffffff;
     ct->current_segment = 0xffffffff;
 
-    // Allocate area to hold all subtable structs, if not already allocated
-    if (!ct->Tables) {
-        ct->Tables = (subtable_t *) malloc(sizeof(subtable_t) * ct->numTables);
-        if (!ct->Tables) return segment_freeTable(conv_tab);
-        memset(ct->Tables,
-               0, sizeof(subtable_t) * numTables);
-    }
+    ct->Tables = (subtable_t *) calloc(ct->numTables, sizeof(subtable_t));
+    if (!ct->Tables) goto error;
 
 
-    BD_DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", numTables);
+    BD_DEBUG(DBG_BDPLUS,"[segment] num tables %d\n", ct->numTables);
 
-    for (table = 0; table < numTables; table++) {
-        uint32_t tableID;
-        uint32_t numSegments;
+    for (table = 0; table < ct->numTables; table++) {
+
+        if (len < 6 || ptr > len - 6)
+            goto error;
 
         // Assign pointer so we don't need to keep dereferencing
         subtable = &ct->Tables[ table ];
 
-        tableID = FETCH4(&Table[ptr]);
+        subtable->tableID = FETCH4(&Table[ptr]);
         ptr += 4;
-
-        if (subtable->tableID && (subtable->tableID != tableID)) {
-            BD_DEBUG(DBG_BDPLUS,"[segment] Warning: tableID changed %08X != %08X\n",
-                   subtable->tableID, tableID);
-        }
-        subtable->tableID = tableID;
 
         // Here, we might increase the number of segments.
 
-        //subtable->numSegments = FETCHU2(&Table[ptr]);
-        numSegments = FETCHU2(&Table[ptr]);
+        subtable->numSegments = FETCHU2(&Table[ptr]);
         ptr += 2;
 
         // Don't allocate if no (new) segments
-        if (!numSegments) continue;
-
-        if (subtable->numSegments && (subtable->numSegments != numSegments)) {
-            BD_DEBUG(DBG_BDPLUS,"[segment] Warning: numSegments changed %08X != %08X\n",
-                   subtable->numSegments, numSegments);
-        }
-
-        subtable->numSegments = numSegments;
+        if (!subtable->numSegments) continue;
 
         BD_DEBUG(DBG_BDPLUS,"[segment] Table %d ID %08X, %u segments\n",
                table, subtable->tableID, subtable->numSegments);
 
-        // Allocate area if required
-        if (!subtable->Segments) {
-            subtable->Segments = (segment_t *) malloc(sizeof(segment_t) *
-                                                      numSegments);
-            if (!subtable->Segments) continue;
-            memset(subtable->Segments, 0,
-                   sizeof(segment_t) *
-                   numSegments);
-        }
-
+        subtable->Segments = (segment_t *) calloc(subtable->numSegments, sizeof(segment_t));
+        if (!subtable->Segments) goto error;
 
         // Loop on all segments
         for (currseg = 0;
-             currseg < numSegments;
+             currseg < subtable->numSegments;
              currseg++) {
+
+            if (ptr + currseg * 4 > len - 4)
+                goto error;
 
             segment = &subtable->Segments[ currseg ];
 
             offset = FETCH4(&Table[ptr + (currseg * 4) ]);
-            segment->offset = offset;  // not really used
+            //segment->offset = offset;  // not really used
+
+            if (offset > len - 4)
+                goto error;
 
             segment->numEntries = FETCH4(&Table[offset]);
             offset += 4;
@@ -291,19 +371,19 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
             BD_DEBUG(DBG_BDPLUS,"   Segment %d offset %08X -> %d entries\n",
                    currseg, offset-4, segment->numEntries);
 
-            segment->Entries = (entry_t *) malloc(sizeof(entry_t) *
-                                                  segment->numEntries);
-            if (!segment->Entries) continue;
+            segment->Entries = (entry_t *) calloc(segment->numEntries, sizeof(entry_t));
+            if (!segment->Entries) goto error;
 
             // If we have non-zero entries, assume they are encrypted
             segment->encrypted = 1;
             encrypted_segments++;
 
-            memset(segment->Entries, 0, sizeof(entry_t) *
-                   segment->numEntries);
-
             // First read in the index table
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
+
+                if (offset > len - 4)
+                    goto error;
+
                 entry = &segment->Entries[ currentry ];
 
                 entry->index = FETCH4(&Table[offset]);
@@ -313,6 +393,9 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
             // Now read in the data.
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
                 entry = &segment->Entries[ currentry ];
+
+                if (len < 16 || offset > len - 16)
+                    goto error;
 
                 entry->flags = Table[ offset ];
                 offset += 1;
@@ -345,10 +428,102 @@ int32_t segment_setTable(conv_table_t **conv_tab, uint8_t *Table, uint32_t len)
     BD_DEBUG(DBG_BDPLUS,"[segments] Done parsing. %d segments need decrypting.\n",
            encrypted_segments);
 
+    *conv_tab = ct;
     return ct->numTables;
+
+ error:
+    BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[segments] Conversion table parsing failed.\n");
+    segment_freeTable(&ct);
+    return -1;
 }
 
+static int32_t segment_setMasks(conv_table_t **conv_tab, uint8_t *Table, size_t len)
+{
+    conv_table_t *ct;
+    uint32_t ptr = 0;
+    unsigned rec_size = 16;
 
+    if (!Table || !len) return -1;
+
+    BD_DEBUG(DBG_BDPLUS,"[segment] Starting decode of segment_masks.bin: %p (%zu)\n", Table, len);
+
+    // If we do not already have a conv_tab, allocate it.
+    if (!*conv_tab) {
+        *conv_tab = (conv_table_t *) calloc(1, sizeof(*ct));
+        if (!*conv_tab) return -2;
+        (*conv_tab)->type = ct_segment_masks;
+    } else if ((*conv_tab)->type != ct_segment_masks) {
+        return -1;
+    }
+
+    ct = *conv_tab;
+
+    if (!memcmp(Table, "SEGK", 4)) {
+        if (!memcmp(Table, "SEGK0200", 8)) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] segment mask file with FM_ID (version %8.8s)\n", Table);
+            rec_size += 8;
+        }
+        else if (memcmp(Table, "SEGK0100", 8)) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] unsupported segment mask file version %8.8s\n", Table);
+            return -1;
+        }
+        Table += 8;
+    } else {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] no header found from segment mask file\n");
+        //return -1;
+    }
+
+    while (ptr + 4 + 2 + rec_size <= len) {
+        subtable_t *subtable;
+        segment_t  *segment;
+        uint32_t    tableID, subtableID;
+        int         table;
+
+        tableID = FETCH4(&Table[ptr]);
+        ptr += 4;
+        subtableID = (Table[ptr] << 8) | Table[ptr + 1];
+        ptr += 2;
+
+        /* find sutable or allocate new */
+        table = _findTableIndex(ct, tableID);
+        if (table < 0) {
+            ct->Tables = _arrayGrow(ct->Tables, sizeof(subtable_t), ct->numTables, 1);
+            if (!ct->Tables)
+                return segment_freeTable(conv_tab);
+            table = ct->numTables;
+            ct->numTables++;
+        }
+        subtable = &ct->Tables[ table ];
+        subtable->tableID = tableID;
+
+        /* find segment or allocate new */
+        if (subtable->numSegments <= subtableID) {
+            int diff = subtableID + 1 - subtable->numSegments;
+            subtable->Segments = _arrayGrow(subtable->Segments, sizeof(segment_t), subtable->numSegments, diff);
+            if (!subtable->Segments)
+                return segment_freeTable(conv_tab);
+            subtable->numSegments = subtableID + 1;
+        }
+        segment = &subtable->Segments[ subtableID ];
+
+        BD_DEBUG(DBG_BDPLUS,"[segment] Table %d ID %08X, %u segments\n",
+                 table, subtable->tableID, subtable->numSegments);
+
+        segment->encrypted = 1;
+
+        memcpy(segment->key, &Table[ptr], 16);
+        ptr += 16;
+        if (rec_size >= 16+8) {
+            memcpy(segment->mask, &Table[ptr], 8);
+            ptr += 8;
+        } else {
+            /* not available, enable all */
+            memset(segment->mask, 0xff, sizeof(segment->mask));
+        }
+    }
+
+    return ct->numTables;
+}
 
 int32_t segment_freeTable(conv_table_t **Table)
 {
@@ -361,11 +536,13 @@ int32_t segment_freeTable(conv_table_t **Table)
 
     ct = *Table;
 
+    if (ct->Tables)
     for (table = 0; table < ct->numTables; table++) {
 
         // Assign pointer so we don't need to keep dereferencing
         subtable = &ct->Tables[ table ];
 
+        if (subtable->Segments)
         for (currseg = 0; currseg < subtable->numSegments; currseg++) {
 
             segment = &subtable->Segments[ currseg ];
@@ -382,6 +559,8 @@ int32_t segment_freeTable(conv_table_t **Table)
 
     X_FREE(ct->Tables);
     ct->numTables = 0;
+
+    X_FREE(ct);
 
     *Table = NULL;
 
@@ -518,10 +697,12 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
     if (!numMergeTables) return 0;
 
     // Grow the list to hold the new tables.
+    void *tmp = set1->Tables;
     set1->Tables = (subtable_t *) realloc(set1->Tables,
                                           (set1->numTables + numMergeTables) *
                                           sizeof(subtable_t));
     if (!set1->Tables) {
+        X_FREE(tmp);
         set1->numTables = 0;
         BD_DEBUG(DBG_BDPLUS,"[segment] Out of memory.\n");
         return 0;
@@ -565,7 +746,37 @@ uint32_t segment_mergeTables(conv_table_t *set1, conv_table_t *set2)
 }
 
 
+//
+// Activates a table. This is usefull if a cached convtab.bin file is being used.
+// Sets all segements as decrypted and all entries as active
+int32_t segment_activateTable(conv_table_t *conv_tab)
+{
+    uint32_t table, currseg, currentry;
+    subtable_t *subtable = NULL;
+    segment_t *segment = NULL;
+    entry_t *entry = NULL;
 
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] activating conv_tab.bin\n");
+
+    for (table = 0; table < conv_tab->numTables; table++) {
+
+        // Assign pointer so we don't need to keep dereferencing
+        subtable = &conv_tab->Tables[ table ];
+
+        //set all segments as decrypted
+        for (currseg = 0; currseg < subtable->numSegments; currseg++) {
+            segment = &subtable->Segments[ currseg ];
+            segment->encrypted = 0;
+
+            //set all entries as active
+            for (currentry = 0; currentry < segment->numEntries; currentry++) {
+                entry = &segment->Entries[ currentry ];
+                entry->active = 1;
+            }
+        }
+    }
+    return 0;
+}
 
 
 //
@@ -657,6 +868,7 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
 
     // After decrypting the whole segment, re-parse it to remove any
     // repair descriptors that are "fakes".
+    unsigned logged_flag3 = 0, invalid_entries = 0;
     for (currentry = 0;
          currentry < segment->numEntries;
          currentry++) {
@@ -669,14 +881,18 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
         switch((entry->flags>>6) & 0x3) {
 
         case 0:
-            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 0. Don't know what to do\n");
+            /* No transform */
+            //BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 0. Don't know what to do\n");
+            entry->active = 0;
             break;
 
         case 1: // Type 1, always active.
+            /* Transform */
             entry->active = 1;
             break;
 
         case 2: // Type 2, index mask[] to check if active
+            /* Forensic */
             bits = entry->flags & 0x3f; // 6 bits, 0-63
 
             // If set true, it is active, so process next..
@@ -714,7 +930,12 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
             break;
 
         case 3:
-            BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 3. Don't know what to do\n");
+            /* Reserved. Table or mask is invalid ? */
+            if (logged_flag3 < 2)
+                BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] entry type 3. Don't know what to do\n");
+            else
+                BD_DEBUG(DBG_BDPLUS,"[segment] entry type 3. Don't know what to do\n");
+            logged_flag3++;
             entry->active = 0;
             break;
 
@@ -724,10 +945,23 @@ int32_t segment_decrypt(conv_table_t *conv_tab, uint8_t *key, uint8_t *mask)
 
         } // switch flags
 
+        /* deactivate invalid entries */
+        if (_is_invalid_entry(entry, currentry == 0 ? NULL : entry - 1)) {
+            entry->active = 0;
+            invalid_entries++;
+        }
+
     } // for entries
 
+    if (invalid_entries) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] broken table %05d, %d (deactivated %u invalid entries, %u entries left). Mask %02x%02x0x%02x...\n",
+                 conv_tab->Tables[ conv_tab->current_table ].tableID, conv_tab->current_segment,
+                 invalid_entries, segment->numEntries - invalid_entries,
+                 segment->key[0], segment->key[1], segment->key[2]);
+    }
+
     if (removed)
-        BD_DEBUG(DBG_BDPLUS,"[segment] cleaned out %u entries.\n", removed);
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] cleaned out %u entries.\n", removed);
 
     return 1;
 }
@@ -743,6 +977,46 @@ static int segment_sortby_tableid(const void *a1, const void *a2)
     return 0;
 }
 
+
+int32_t segment_load(conv_table_t **conv_tab, BD_FILE_H *fp)
+{
+    int64_t fileLen;
+    int64_t len;
+    uint8_t *buffer = NULL;
+
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[segment] loading cached convTable file\n");
+
+    fileLen = file_size(fp);
+    if (fileLen < 2 || fileLen > 0x400000)
+        return -1;
+
+    buffer = (uint8_t *)malloc(fileLen);
+    if (!buffer)
+        return -1;
+
+    len = file_read(fp, buffer, fileLen);
+
+    // Save the table to VM
+    if (len == fileLen) {
+        // Decode the table into C structures.
+        if (fileLen > 8 && !memcmp(buffer, "SEGK0", 5))
+            segment_setMasks(conv_tab, buffer, fileLen);
+        else
+            segment_setTable(conv_tab, buffer, fileLen);
+    }
+
+    X_FREE(buffer);
+
+    if (*conv_tab) {
+        int errors = segment_validateTable(*conv_tab);
+        if (errors == 0) {
+            return 1;
+        }
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[bdplus] dropping broken cached conversion table (%d invalid entries).\n", errors);
+        segment_freeTable(conv_tab);
+    }
+    return 0;
+}
 
 
 int32_t segment_save(conv_table_t *ct, FILE *fd)
@@ -771,7 +1045,7 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
     STORE2((uint8_t *)&u16, ct->numTables);
     rval = fwrite(&u16, sizeof(u16), 1, fd);
     if(rval != 1)
-      BD_DEBUG(DBG_BDPLUS,"[segment] Unable to write number of tables\n");
+        goto fail;
 
     // We use "offset" to keep track of where we are, and were we WILL write
     // entries, for the index-offset-array we write at the start of each
@@ -787,10 +1061,14 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
         STORE4((uint8_t *)&u32, subtable->tableID);
         rval = fwrite(&u32, sizeof(u32), 1, fd);
+        if (rval != 1)
+            goto fail;
         offset += 4;
 
         STORE2((uint8_t *)&u16, subtable->numSegments);
         rval = fwrite(&u16, sizeof(u16), 1, fd);
+        if (rval != 1)
+            goto fail;
         offset += 2;
 
         offset += subtable->numSegments * sizeof(uint32_t);
@@ -804,6 +1082,8 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
             //STORE4((uint8_t *)&u32, segment->offset);
             STORE4((uint8_t *)&u32, offset);
             rval = fwrite(&u32, sizeof(u32), 1, fd);
+            if (rval != 1)
+                goto fail;
 
             // Increase offset based on size of entries.
             offset += sizeof(segment->numEntries);
@@ -827,6 +1107,8 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
             STORE4((uint8_t *)&u32, segment->numEntries);
             rval = fwrite(&u32, sizeof(u32), 1, fd);
+            if (rval != 1)
+                goto fail;
 
             // Write out entry index list
             for (currentry = 0; currentry < segment->numEntries; currentry++) {
@@ -835,6 +1117,8 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
                 STORE4((uint8_t *)&u32, entry->index);
                 rval = fwrite(&u32, sizeof(u32), 1, fd);
+                if (rval != 1)
+                    goto fail;
             }
 
             // Write out entries
@@ -843,17 +1127,29 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
                 entry = &segment->Entries[ currentry ];
 
                 rval = fwrite(&entry->flags, 1, 1, fd);
+                if (rval != 1)
+                    goto fail;
 
                 u32 = entry->patch0_address_adjust << 20;
                 u32 |= (entry->patch1_address_adjust << 8);
                 STORE4(tmp, u32);
                 rval = fwrite(tmp, 3, 1, fd);
+                if (rval != 1)
+                    goto fail;
 
                 rval = fwrite(&entry->patch0_buffer_offset, 1, 1, fd);
+                if (rval != 1)
+                    goto fail;
                 rval = fwrite(&entry->patch1_buffer_offset, 1, 1, fd);
+                if (rval != 1)
+                    goto fail;
 
                 rval = fwrite(&entry->patch0, sizeof(entry->patch0), 1, fd);
+                if (rval != 1)
+                    goto fail;
                 rval = fwrite(&entry->patch1, sizeof(entry->patch1), 1, fd);
+                if (rval != 1)
+                    goto fail;
 
             } // entries
 
@@ -861,6 +1157,9 @@ int32_t segment_save(conv_table_t *ct, FILE *fd)
 
     } // tables
 
+    return 0;
+ fail:
+    BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] Saving segment failed\n");
     return -1;
 }
 
@@ -941,10 +1240,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 
             // PATCH 0
 
-            offset = (( (uint64_t)entry->index +
-                        (uint64_t)entry->patch0_address_adjust) *
-                      (uint64_t)0xC0 +
-                      (uint64_t)entry->patch0_buffer_offset);
+            offset = _entry_offset0(entry);
 
             if (firsttime) {
                 BD_DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch0\n",
@@ -965,11 +1261,7 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 
             // PATCH 1
 
-            offset = (( (uint64_t)entry->index +
-                        (uint64_t)entry->patch0_address_adjust +
-                        (uint64_t)entry->patch1_address_adjust) *
-                      (uint64_t)0xC0 +
-                      (uint64_t)entry->patch1_buffer_offset);
+            offset = _entry_offset1(entry);
 
             if (firsttime) {
                 BD_DEBUG(DBG_BDPLUS,"[segment] would seek to %016"PRIx64" to write patch1\n",
@@ -997,6 +1289,10 @@ int32_t segment_patchfile(conv_table_t *ct, uint32_t table, FILE *fd)
 }
 
 
+void segment_close_m2ts(bdplus_st_t *st)
+{
+    free(st);
+}
 
 bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
 {
@@ -1024,6 +1320,21 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
 
     BD_DEBUG(DBG_BDPLUS, "using table index %d for %05u.m2ts\n", table, m2ts);
 
+    if (ct->type == ct_segment_masks) {
+        unsigned missing_masks = 0;
+        const uint8_t empty_mask[16] = {0};
+        for (ii = 0; ii < ct->Tables[table].numSegments; ii++) {
+            ct->Tables[table].Segments[ii].numEntries = 0;
+            X_FREE(ct->Tables[table].Segments[ii].Entries);
+            ct->Tables[table].Segments[ii].encrypted = 1;
+            missing_masks += !memcmp(ct->Tables[table].Segments[ii].key, empty_mask, 16);
+        }
+        if (missing_masks) {
+            /* it is quite typical to have empty first segment. => not fatal if one or two masks are missing. */
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "conversion table for %05d.m2ts does not have all masks (%d/%d are missing)\n",
+                     m2ts, missing_masks, ct->Tables[table].numSegments);
+        }
+    } else {
     /* empty table -> no patching needed */
     int segments = 0;
     for (ii = 0; ii < ct->Tables[table].numSegments; ii++) {
@@ -1039,14 +1350,19 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "conversion table for %05d.m2ts is still encrypted\n", m2ts);
         return NULL;
     }
+    }
 
     // Changing table, or seeking elsewhere, means zero the segment and
     // entry so we have to find them again.
 
     bdplus_st_t *st = calloc(1, sizeof(*st));
+    if (!st) {
+        BD_DEBUG(DBG_CRIT, "out of memory\n");
+        return NULL;
+    }
+    st->process_stream = (ct->type != ct_full);
     st->stream_table = table;
     st->table = ct;
-
     BD_DEBUG(DBG_BDPLUS,"[segment] settable(%05u.m2ts): %p\n", m2ts, st);
 
     return st;
@@ -1054,6 +1370,15 @@ bdplus_st_t *segment_set_m2ts(conv_table_t *ct, uint32_t m2ts)
 
 int32_t segment_patchseek(bdplus_st_t *ct, uint64_t offset)
 {
+    if (ct->process_stream) {
+        /* flush cache */
+        unsigned    currseg;
+        subtable_t *subtable = &ct->table->Tables[ ct->stream_table ];
+        for (currseg = 0; currseg < subtable->numSegments; currseg++) {
+            X_FREE(subtable->Segments[ currseg ].Entries);
+            subtable->Segments[ currseg ].numEntries = 0;
+        }
+    }
 
     // Changing table, or seeking elsewhere, means zero the segment and
     // entry so we have to find them again.
@@ -1065,7 +1390,138 @@ int32_t segment_patchseek(bdplus_st_t *ct, uint64_t offset)
 
     BD_DEBUG(DBG_BDPLUS,"[segment] seek: %016"PRIx64"\n", offset);
 
+    if (ct->process_stream) {
+        /* data (offset) must be aligned */
+        if ((offset % 192) != 0) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] segment_patchseek() error: unaligned seek in mode1\n");
+            return -1;
+        }
+    }
+
     return 0;
+}
+
+//#define DUMP_0x89
+#ifdef DUMP_0x89
+static void _dump_0x89(unsigned spn, const uint8_t *d, const uint8_t *mask)
+{
+    fprintf(stderr, "@%-12u  | ", spn);
+    for (int i = 0; i < d[1]; i++)
+        fprintf(stderr, "%02x ", d[2+i]);
+    fprintf(stderr, "| next @%d (+%d)\n", spn + (d[d[1]]<<8) + d[d[1]+1], (d[d[1]]<<8) + d[d[1]+1]);
+    fprintf(stderr, "          MASK | %4u |%02x %02x %02x %02x ...\n", (d[2] << 8) | d[3], mask[0], mask[1], mask[2], mask[3]);
+
+     /* no mask -> no point to continue */
+    const uint8_t empty_mask[16] = {0};
+    if (!memcmp(mask, empty_mask, 16))
+        return;
+
+    if (((d[4] ^ mask[0]) >> 6) == 0 || ((d[4] ^ mask[0]) >> 6) == 3)
+        fprintf(stderr, "            F%d |       ", (d[4] ^ mask[0]) >> 6);
+    else
+        fprintf(stderr, "      %s |       ", ((d[4] ^ mask[0]) >> 6) == 2 ? "FORENSIC" : "   PATCH");
+
+    if (((d[4] ^ mask[0]) >> 6) != 0) {
+        /* dump content */
+        const uint8_t *p = d + 4;
+        for (int i = 0; i < d[1] - 4; i++)
+            fprintf(stderr, "%02x ", p[i] ^ mask[i]);
+        uint32_t t = (FETCH4(&p[1]) ^ FETCH4(&mask[1]));
+        fprintf(stderr, "      | BP: %d %d  O: %d %d", p[4] ^ mask[4], p[5] ^ mask[5], t>>20, (t>>8)&0xfff);
+    }
+    fprintf(stderr, "\n");
+}
+#endif
+
+static int ts_parse_desc_0x89(bdplus_st_t *ct, const unsigned spn, const unsigned spn0, const uint8_t *d)
+{
+    subtable_t    *st = &ct->table->Tables[ ct->stream_table ];
+    segment_t     *segment;
+    const uint8_t *mask;
+    unsigned       sp_id = (d[2] << 8) | d[3];
+    const uint8_t  empty_mask[16] = {0};
+
+    if (sp_id >= st->numSegments) {
+        /* broken table or stream */
+        return 0;
+    }
+
+    mask = st->Segments[sp_id].key;
+#ifdef DUMP_0x89
+    _dump_0x89(spn, d, mask);
+#endif
+
+    /* TODO: if mask missing, call VM for computeSP */
+    if (!memcmp(mask, empty_mask, 16)) {
+        return 0;
+    }
+
+    /* skip fuzzing entries (random data) */
+    if (((d[4] ^ mask[0]) >> 6) == 0)
+        return 0;
+    /* sanity check flags */
+    if (((d[4] ^ mask[0]) >> 6) == 3) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] found invalid flags value. incorrect mask ?\n");
+        return 0;
+    }
+
+    /* avoid polluting tables with incomplete lists */
+    if (sp_id > 0) {
+        X_FREE(st->Segments[sp_id - 1].Entries);
+        st->Segments[sp_id - 1].numEntries = 0;
+    }
+
+    segment = &st->Segments[ sp_id ];
+
+    /* check Forensic Mark ID */
+    if (((d[4] ^ mask[0]) >> 6) == 2) {
+        unsigned fm_id_pos = (d[4] ^ mask[0]) & 0x3f;
+        unsigned fm_id_bit = segment->mask[ 7 - (fm_id_pos >> 3) ] & (1 << (fm_id_pos & 0x07));
+        BD_DEBUG(DBG_BDPLUS, "[segment] %s type 2 patch (FM_ID_bit_pos = %d, FM_ID_bit = %d)\n",
+                 fm_id_bit ? "activated" : "deactivated", fm_id_pos, !!fm_id_bit);
+        if (fm_id_bit == 0) {
+            return 0;
+        }
+    }
+
+#define E1_CACHE_SIZE 50  /* there must be some upper bound in the specs (?) */
+    /* keep ordered list of next patches */
+    if (segment->Entries == NULL) {
+        segment->Entries = calloc(E1_CACHE_SIZE, sizeof(st->Segments[sp_id].Entries[0]));
+        segment->numEntries = 0;
+        if (!segment->Entries)
+            return 0;
+    }
+    /* drop past entries */
+    while (segment->numEntries > 0 &&
+           segment->Entries[0].index + segment->Entries[0].patch0_address_adjust + segment->Entries[0].patch1_address_adjust < spn0 - 1) {
+        segment->numEntries--;
+        if (segment->numEntries > 0)
+            memmove(&segment->Entries[0], &segment->Entries[1], segment->numEntries * sizeof(segment->Entries[0]));
+    }
+    if (segment->numEntries >= E1_CACHE_SIZE - 1) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] stream entry cache overflow\n");
+        return 0;
+    }
+
+    /* inject entry to the table for segment_patch() */
+    entry_t entry = {
+        spn, d[4] ^ mask[0], ((d[5] ^ mask[1]) << 4) | ((d[6] ^ mask[2]) >> 4),
+        (((d[6] ^ mask[2]) & 0x0f) << 8) | ( d[7] ^ mask[3]), d[8] ^ mask[4], d[9] ^ mask[5],
+        {d[10] ^ mask[6],  d[11] ^ mask[7],  d[12] ^ mask[8],  d[13] ^ mask[9],  d[14] ^ mask[10], },
+        {d[15] ^ mask[11], d[16] ^ mask[12], d[17] ^ mask[13], d[18] ^ mask[14], d[19] ^ mask[15], }, 1,
+    };
+    memcpy(&segment->Entries[segment->numEntries], &entry, sizeof(entry));
+    segment->numEntries++;
+
+    ct->stream_segment = sp_id;
+    ct->stream_entry = 0;
+    ct->next_patch_offset = 0;
+
+    BD_DEBUG(DBG_BDPLUS, "[segment] injected patch for segment %u, SPN %u (queue %d patches).\n",
+             sp_id, entry.index + entry.patch0_address_adjust, segment->numEntries);
+
+    return 1;
 }
 
 //
@@ -1095,6 +1551,20 @@ int32_t segment_patch(bdplus_st_t *ct, int len, uint8_t *buffer)
     end_offset = ct->stream_offset + (uint64_t) len;
     ct->stream_offset += (uint64_t) len;
 
+    if (ct->process_stream) {
+        const uint8_t *p;
+        if (buffer[4] != 0x47) {
+            BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[segment] segment_patch() input error: unaligned data in stream fixup mode\n");
+            return -1;
+        }
+
+        for (p = buffer; p < buffer + len; p += 192) {
+            if (p[5] == 0x41 && p[6] == 0x00 && !(p[7] & 0x20) && p[4] == 0x47 && p[21] == 0x89 && p[22] == 0x14) {
+                ts_parse_desc_0x89(ct, ((start_offset + p - buffer) / 192), start_offset / 192, p + 21);
+            }
+        }
+    }
+
     if (ct->next_patch_offset > end_offset) {
         return 0;
     }
@@ -1115,11 +1585,7 @@ int32_t segment_patch(bdplus_st_t *ct, int len, uint8_t *buffer)
 
             // Skip any entries that are in-active.
             if (!entry->active) continue;
-
-            offset0 = (((uint64_t)entry->index +
-                        (uint64_t)entry->patch0_address_adjust) *
-                       (uint64_t)0xC0 +
-                       (uint64_t)entry->patch0_buffer_offset);
+            offset0 = _entry_offset0(entry);
 
             // If this Entry is beyond this buffer, stop here, we need
             // more data.
@@ -1128,12 +1594,7 @@ int32_t segment_patch(bdplus_st_t *ct, int len, uint8_t *buffer)
                 return patches;
             }
 
-
-            offset1 = (( (uint64_t)entry->index +
-                         (uint64_t)entry->patch0_address_adjust +
-                         (uint64_t)entry->patch1_address_adjust) *
-                       (uint64_t)0xC0 +
-                       (uint64_t)entry->patch1_buffer_offset);
+            offset1 = _entry_offset1(entry);
 
             // While this Entry (patch1) is (completely) before this
             // buffer, skip to the next

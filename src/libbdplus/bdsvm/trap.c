@@ -135,21 +135,28 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
     gcry_error_t gcry_err;
     uint32_t i;
     uint8_t decryptedKey[AES_BLOCK_SIZE]; // Temporary key
-    char errstr[100];
+    char errstr[100] = "";
 
     BD_DEBUG(DBG_BDPLUS_TRAP,"[TRAP] TRAP_Aes(KeyID %08X)\n", opOrKeyID);
 
+#if 0
     if (opOrKeyID == 0xFFF10002) {
         BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT, "[TRAP] TRAP_Aes(AES_ECB_DECRYPT_MEDIA_KEY) not implemented\n");
         return STATUS_INVALID_PARAMETER;
     }
+#endif
 
     if (opOrKeyID > 0xFFF10002)
         return STATUS_INVALID_PARAMETER;
     if ((opOrKeyID < 0xFFF10000) && (opOrKeyID > 6))
         return STATUS_INVALID_PARAMETER;
 
-    gcry_cipher_open(&gcry_h, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);
+    gcry_err = gcry_cipher_open(&gcry_h, GCRY_CIPHER_AES, GCRY_CIPHER_MODE_ECB, 0);
+    if (gcry_err) {
+        gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
+        BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes %s.\n", errstr);
+        return STATUS_INVALID_PARAMETER;
+    }
 
     switch(opOrKeyID) {
 
@@ -178,8 +185,11 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
         break;
 
     case 0xFFF10002: // AES_DECRYPT_MEDIA_KEY
+        BD_DEBUG(DBG_BDPLUS_TRAP | DBG_CRIT, "[TRAP] TRAP_Aes(AES_ECB_DECRYPT_MEDIA_KEY) not implemented\n");
         key = mk;
         // TODO
+
+        /* fall thru */
 
     case 0xFFF10001: // AES_DECRYPT
         BD_DEBUG(DBG_BDPLUS,"[TRAP] TRAP_Aes(AES_DECRYPT): %p->%p (%d)\n", src, dst, len);
@@ -210,11 +220,13 @@ uint32_t TRAP_Aes(bdplus_config_t *config, uint8_t *dst, uint8_t *src, uint32_t 
 
         if (!config || !config->aes_keys) {
             BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_Aes: AES keys not loaded.\n");
+            gcry_cipher_close(gcry_h);
             return STATUS_INVALID_PARAMETER;
         }
 
         if ((int)opOrKeyID >= config->num_aes_keys) {
             BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_Aes(AES_DECRYPT_PLAYERKEYS): Key %u does not exist in config.\n", opOrKeyID);
+            gcry_cipher_close(gcry_h);
             return STATUS_INVALID_PARAMETER;
         }
 
@@ -353,9 +365,10 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
 {
     uint8_t *message = NULL;
     gcry_error_t gcry_err;
-    gcry_mpi_t mpi_hash;
-    gcry_sexp_t sexp_key, sexp_data, sexp_sig, sexp_r, sexp_s;
+    gcry_mpi_t mpi_hash = NULL;
+    gcry_sexp_t sexp_key = NULL, sexp_data = NULL, sexp_sig = NULL, sexp_r = NULL, sexp_s = NULL;
     char errstr[100];
+    uint32_t result = STATUS_INVALID_PARAMETER;
 
     if (!config || !config->ecdsa_keys) {
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "[TRAP] TRAP_PrivateKey: ECDSA keys not loaded.\n");
@@ -426,7 +439,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     }
 
     /* Build an s-expression for the hash */
-    gcry_sexp_build(&sexp_data, NULL,
+    gcry_err = gcry_sexp_build(&sexp_data, NULL,
                     "(data"
 #if defined(GCRYPT_VERSION_NUMBER) && GCRYPT_VERSION_NUMBER >= 0x010600
                     /*
@@ -441,6 +454,15 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
                     "  (value %m))",
                     mpi_hash
                     );
+
+    if (gcry_err)
+    {
+      memset(errstr, 0, sizeof(errstr));
+      gpg_strerror_r(gcry_err, errstr, sizeof(errstr));
+      BD_DEBUG(DBG_BDPLUS|DBG_CRIT,"[TRAP] TRAP_PrivateKey(%X, %08X) error building "
+            "sexp_data: %s\n",
+            keyID, controlWord, errstr);
+    }
 
     /* Dump information about the data s-expression when debugging */
     if (GCRYPT_DEBUG)
@@ -470,23 +492,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
      */
     char *strfmt_key = NULL;
     if ( keyID == 0 ) {
-      strfmt_key = (char*)malloc(
-        sizeof("(private-key") +
-        sizeof("(ecdsa") +
-        sizeof("(p #00") + sizeof(CA_q) + sizeof("#)") +
-        sizeof("(a #00") + sizeof(CA_a) + sizeof("#)") +
-        sizeof("(b #00") + sizeof(CA_b) + sizeof("#)") +
-        sizeof("(g #04") +
-            sizeof(CA_x_G) +
-            sizeof(CA_y_G) +
-            sizeof("#)") +
-        sizeof("(n #00") + sizeof(CA_n) + sizeof("#)") +
-        sizeof("(q #04") +
-            strlen(CA_x_Q0) +
-            strlen(CA_y_Q0) +
-            sizeof("#)") +
-        sizeof("(d #00") + strlen(CA_d0) + sizeof("#)))") + 1);
-      sprintf(strfmt_key,
+      strfmt_key = str_printf(
         "(private-key"
         "(ecdsa"
         "(p #00%s#)"
@@ -515,23 +521,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     }
     else
     {
-      strfmt_key = (char*)malloc(
-        sizeof("(private-key") +
-        sizeof("(ecdsa") +
-        sizeof("(p #00") + sizeof(CA_q) + sizeof("#)") +
-        sizeof("(a #00") + sizeof(CA_a) + sizeof("#)") +
-        sizeof("(b #00") + sizeof(CA_b) + sizeof("#)") +
-        sizeof("(g #04") +
-            sizeof(CA_x_G) +
-            sizeof(CA_y_G) +
-            sizeof("#)") +
-        sizeof("(n #00") + sizeof(CA_n) + sizeof("#)") +
-        sizeof("(q #04") +
-            strlen(CA_x_Q1) +
-            strlen(CA_y_Q1) +
-            sizeof("#)") +
-        sizeof("(d #00") + strlen(CA_d1) + sizeof("#)))") + 1);
-      sprintf(strfmt_key,
+      strfmt_key = str_printf(
         "(private-key"
         "(ecdsa"
         "(p #00%s#)"
@@ -557,6 +547,11 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
         CA_y_Q1,
         CA_d1
         );
+    }
+
+    if (!strfmt_key) {
+      BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] TRAP_PrivateKey: out of memory ?\n");
+      goto error;
     }
 
     /* Now build the S-expression */
@@ -626,6 +621,9 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     memcpy(dst, r, 20);
     memcpy(dst + 20, s, 20);
 
+    result = STATUS_OK;
+
+ error:
     /* Free allocated memory */
     gcry_mpi_release(mpi_hash);
     gcry_sexp_release(sexp_key);
@@ -638,7 +636,7 @@ uint32_t TRAP_PrivateKey(bdplus_config_t *config, uint32_t keyID, uint8_t *dst, 
     X_FREE(message);
     X_FREE(strfmt_key);
 
-    return STATUS_OK;
+    return result;
 }
 
 // write <len> random bytes to <dst>
@@ -740,18 +738,22 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
         BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(INIT)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
         memset(dst, 0, 352); //352, according to jumper snapshots
-        sha_SHA1_Init(&matched_ctx->sha);
-        // Call UPDATE if we were also given data
-        TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
+        if (matched_ctx) {
+            sha_SHA1_Init(&matched_ctx->sha);
+            // Call UPDATE if we were also given data
+            TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
+        }
         break;
 
     case SHA_UPDATE:
         BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(UPDATE)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
-        sha_SHA1_Update(&matched_ctx->sha, src, len);
-        // This call is not required, only here to make "dst" be identical
-        // to reference player.
-        sha_reference(dst, &matched_ctx->sha);
+        if (matched_ctx) {
+            sha_SHA1_Update(&matched_ctx->sha, src, len);
+            // This call is not required, only here to make "dst" be identical
+            // to reference player.
+            sha_reference(dst, &matched_ctx->sha);
+        }
         break;
 
     case SHA_FINAL:
@@ -760,16 +762,17 @@ uint32_t TRAP_Sha1(sha_t **sha_head, uint8_t *dst, uint8_t *src, uint32_t len, u
 
         BD_DEBUG(DBG_BDPLUS_TRAP,"[trap] TRAP_Sha1(FINAL)\n");
         matched_ctx = get_sha_ctx(sha_head, dst);
-        // UPDATE if we were also given data.
-        TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
-        // Call FINAL.
-        sha_SHA1_Final(&matched_ctx->sha, digest);
+        if (matched_ctx) {
+            // UPDATE if we were also given data.
+            TRAP_Sha1(sha_head, dst, src, len, SHA_UPDATE);
+            // Call FINAL.
+            sha_SHA1_Final(&matched_ctx->sha, digest);
 
-        // Copy over the digest
-        memcpy(dst, digest, sizeof(digest));
+            // Copy over the digest
+            memcpy(dst, digest, sizeof(digest));
 
-        free_sha_ctx(sha_head, matched_ctx);
-
+            free_sha_ctx(sha_head, matched_ctx);
+        }
         break;
       }
 
@@ -1043,7 +1046,7 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
         return STATUS_INVALID_PARAMETER;
     if ( (dev == 1) && (qID != 1) && (qID != 2) && (qID != 3) )
         return STATUS_INVALID_PARAMETER;
-    if ( (dev == 2) & (qID != 0) & (qID != 1) )
+    if ( (dev == 2) && (qID != 0) && (qID != 1) && (qID != 2) )
         return STATUS_NOT_SUPPORTED;
 
     if (!config || !config->dev) {
@@ -1133,6 +1136,8 @@ uint32_t TRAP_Discovery(bdplus_config_t *config, uint32_t dev, uint32_t qID, uin
             break;
         } // qID
 
+        break;
+
     default:
         BD_DEBUG(DBG_CRIT, "[TRAP] unknown DeviceDiscovery for unknown dev %d: %d\n", dev, qID);
         break;
@@ -1162,6 +1167,10 @@ uint32_t TRAP_LoadContentCode(bdplus_config_t *config, uint8_t *FileName, uint32
 
     // Build the real filename.
     fname = str_printf("BDSVM/%s.svm", (char *) FileName);
+    if (!fname) {
+        BD_DEBUG(DBG_BDPLUS | DBG_CRIT, "out of memory\n");
+        return STATUS_INVALID_PARAMETER;
+    }
 
     BD_DEBUG(DBG_BDPLUS,"[TRAP] reading '%s': unknown %08X\n", fname, Unknown);
 
@@ -1179,7 +1188,7 @@ uint32_t TRAP_LoadContentCode(bdplus_config_t *config, uint8_t *FileName, uint32
         file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
-    if (file_seek(fd, Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
+    if (file_seek(fd, (int64_t)Section * 0x200000, SEEK_CUR) < 0) { // locate wanted section
         BD_DEBUG(DBG_BDPLUS | DBG_CRIT,"[TRAP] ERROR: seeking %s to section %d failed\n", (char*)FileName, Section);
         file_close(fd);
         return STATUS_INVALID_PARAMETER;
@@ -1286,7 +1295,6 @@ uint32_t TRAP_MediaCheck(bdplus_config_t *config, uint8_t *FileName, uint32_t Fi
     fd = file_open(config, (char *)FileName);
     if (!fd) {
         BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to open %s\n", FileName);
-        file_close(fd);
         return STATUS_INVALID_PARAMETER;
     }
 #if 0
@@ -1302,7 +1310,7 @@ uint32_t TRAP_MediaCheck(bdplus_config_t *config, uint8_t *FileName, uint32_t Fi
     }
 #endif
 
-    if (file_seek(fd, seek, SEEK_SET)) {
+    if (file_seek(fd, seek, SEEK_SET) < 0) {
         BD_DEBUG(DBG_BDPLUS|DBG_CRIT, "[TRAP] TRAP_MediaCheck: failed to seek %s to %"PRIu64"\n", (char *)FileName, seek);
         file_close(fd);
         return STATUS_INVALID_PARAMETER;

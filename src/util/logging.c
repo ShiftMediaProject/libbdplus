@@ -19,6 +19,10 @@
  * <http://www.gnu.org/licenses/>.
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include "logging.h"
 
 #include "file/file.h"
@@ -49,7 +53,7 @@ void bd_debug(const char *file, int line, uint32_t mask, const char *format, ...
             debug_mask = strtol(env, NULL, 0);
 
         // Send DEBUG to file?
-        if ((env = getenv("BD_DEBUG_FILE"))) {
+        if ((env = getenv("BDPLUS_DEBUG_FILE"))) {
             FILE *fp = fopen(env, "wb");
             if (fp) {
                 logfile = fp;

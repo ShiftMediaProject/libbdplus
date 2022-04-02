@@ -1,21 +1,28 @@
-Disclaimer
-----------
+# libbdplus
 
-This library is written for the purpose of playing Blu-ray movies. It is
-intended for software that want to support Blu-ray playback (such as VLC and
+**libbdplus** is a research project for a cross-platform open-source implementation of the BD+ VM system.
+
+# Disclaimer
+
+This library is written for the purpose of playing Blu-ray movies.
+
+It is intended for software that want to support Blu-ray playback (such as VLC and
 MPlayer). We, the authors of this library, do not condone nor endorse piracy.
 
 This library is simply a tool for playback of Blu-ray movies. Like any tool, the
 use of this tool can also be abused. There are already numerous laws in
 different countries and juridictions all over the world that protect copyrighted
-material, such as Blu-ray movies. With that said, it would have been
-inappropriate for us to distribute this library with terms such as "you cannot
-use this library for piracy". Instead, we present to everyone this disclaimer.
+material, such as Blu-ray movies.
+
+With that said, it would have been impossible for us to distribute this library
+with terms such as "you cannot use this library for piracy", because this would
+violate the Open Source Definition and the LGPL license.
+Instead, we present to everyone this disclaimer.
 
 As a reminder, here is also the disclaimer found at the beginning of any movie
 in relation to copyrights.
 
-ATTENTION
+## ATTENTION
 
 International agreement and national laws protect copyrighted motion pictures,
 videotapes, and sound recordings.
@@ -29,9 +36,28 @@ concern about motion picture and sound recording piracy to all of its member
 national police forces. (Resolution adopted at INTERPOL General Assembly,
 Stockholm, Sweden, September 8, 1977.)
 
+# Contribute
 
-Welcome to the BD+ library.
----------------------------
+To contribute, just compile the library and open merge requests on the repository:
+https://code.videolan.org/videolan/libbdplus
+
+## CoC
+
+The [VideoLAN Code of Conduct](https://wiki.videolan.org/CoC) applies to this project.
+
+## CLA
+
+There is no CLA.
+
+People will keep their copyright and their authorship rights, while adhering to the license.
+
+VideoLAN will only have the collective work rights.
+
+
+
+
+
+# Welcome to the BD+ library
 
 This library is not complete, in that it will never be complete and
 will always require updates to stay up to date with the latest Bluray

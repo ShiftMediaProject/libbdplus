@@ -25,7 +25,7 @@
 
 #define MKINT_BE16(X) ( (X)[0] << 8 | (X)[1] )
 #define MKINT_BE24(X) ( (X)[0] << 16 | (X)[1] << 8 | (X)[2] )
-#define MKINT_BE32(X) ( (X)[0] << 24 | (X)[1] << 16 |  (X)[2] << 8 | (X)[3] )
+#define MKINT_BE32(X) ( (unsigned)((X)[0]) << 24 | (X)[1] << 16 |  (X)[2] << 8 | (X)[3] )
 #define X_FREE(X)     ( free(X), X = NULL )
 
 #define BD_MIN(a,b) ((a)<(b)?(a):(b))
@@ -36,19 +36,45 @@
  */
 
 // endian safe fetch
-#define FETCH4(X) (uint32_t)(((X)[0]<<24)|(X)[1]<<16|(X)[2]<<8|(X)[3])
-#define FETCHU2(X) (uint32_t)((uint16_t)(((X)[0]<<8)|(X)[1]))
+
+//#define FETCH4(X) (uint32_t)(((uint32_t)(X)[0]<<24)|(X)[1]<<16|(X)[2]<<8|(X)[3])
+static inline uint32_t FETCH4(const void *pv) {
+  const uint8_t *p = pv;
+  return (uint32_t)p[0] << 24 | p[1] << 16 | p[2] << 8 | p[3];
+}
+
+//#define FETCHU2(X) (uint32_t)((uint16_t)(((X)[0]<<8)|(X)[1]))
+static inline uint32_t FETCHU2(const void *pv) {
+  const uint8_t *p = pv;
+  return (uint32_t)p[0] << 8 | p[1];
+}
 
 // Sign extended version
-#define FETCHS2(X) (int32_t)((int16_t)(((X)[0]<<8)|(X)[1]))
+//#define FETCHS2(X) (int32_t)((int16_t)(((X)[0]<<8)|(X)[1]))
+static inline int32_t FETCHS2(const void *pv) {
+  return (int32_t)(int16_t)FETCHU2(pv);
+}
 
-#define STORE8(X, Y) (X)[7]=((Y)&0xff);(X)[6]=(((Y)>>8)&0xff);(X)[5]=(((Y)>>16)&0xff);(X)[4]=(((Y)>>24)&0xff);(X)[3]=(((Y)>>32)&0xff);(X)[2]=(((Y)>>40)&0xff);(X)[1]=(((Y)>>48)&0xff);(X)[0]=(((Y)>>56)&0xff);
+//#define STORE2(X, Y) (X)[1]=(((Y))&0xff);(X)[0]=(((Y)>>8)&0xff);
+static inline void STORE2(void *pv, uint32_t v) {
+  uint8_t *p = pv;
+  p[1] = v;
+  p[0] = v >> 8;
+}
+//#define STORE4(X, Y) (X)[3]=((Y)&0xff);(X)[2]=(((Y)>>8)&0xff);(X)[1]=(((Y)>>16)&0xff);(X)[0]=(((Y)>>24)&0xff);
+static inline void STORE4(void *pv, uint32_t v) {
+  uint8_t *p = pv;
+  STORE2(p + 2, v);
+  STORE2(p,     v >> 16);
+}
+//#define STORE8(X, Y) (X)[7]=((Y)&0xff);(X)[6]=(((Y)>>8)&0xff);(X)[5]=(((Y)>>16)&0xff);(X)[4]=(((Y)>>24)&0xff);(X)[3]=(((Y)>>32)&0xff);(X)[2]=(((Y)>>40)&0xff);(X)[1]=(((Y)>>48)&0xff);(X)[0]=(((Y)>>56)&0xff);
+static inline void STORE8(void *pv, uint64_t v) {
+  uint8_t *p = pv;
+  STORE4(p + 4, v);
+  STORE4(p,     v >> 32);
+}
 
-#define STORE4(X, Y) (X)[3]=((Y)&0xff);(X)[2]=(((Y)>>8)&0xff);(X)[1]=(((Y)>>16)&0xff);(X)[0]=(((Y)>>24)&0xff);
-
-#define STORE2(X, Y) (X)[1]=(((Y))&0xff);(X)[0]=(((Y)>>8)&0xff);
-
-
+#define BD_MAX_SSIZE ((int64_t)(((size_t)-1)>>1))
 
 /*
  * automatic cast from void* (malloc/calloc/realloc)
